@@ -5,6 +5,7 @@
   --color-primary: #2c3e50;
   --color-secondary: #6c757d;
   --color-light: #f8f9fa;
+  --color-light-rgb: 248, 249, 250;
   --color-white: #ffffff;
   --color-border: #e9ecef;
   --color-background: #f8f9fa;
@@ -24,6 +25,7 @@
   --color-primary: #e9ecef;
   --color-secondary: #adb5bd;
   --color-light: #2d2d2d;
+  --color-light-rgb: 45, 45, 45;
   --color-white: #1a1a1a;
   --color-border: #343a40;
   --color-background: #1a1a1a;

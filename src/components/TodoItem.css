@@ -4,22 +4,22 @@
   justify-content: space-between;
   padding: 1.25rem 2rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  background: white;
+  background: var(--color-white);
   transition: all 0.2s ease;
   position: relative;
 }
 
 .todo-item:hover {
-  background: rgba(248, 249, 250, 0.5);
+  background: rgba(var(--color-light-rgb), 0.5);
 }
 
 .todo-item.completed {
-  background: rgba(248, 249, 250, 0.8);
+  background: rgba(var(--color-light-rgb), 0.8);
 }
 
 .todo-item.completed .todo-text {
   text-decoration: line-through;
-  color: #adb5bd;
+  color: var(--color-secondary);
 }
 
 .todo-content {
@@ -33,9 +33,9 @@
 .checkbox {
   width: 24px;
   height: 24px;
-  border: 2px solid #dee2e6;
+  border: 2px solid var(--color-border);
   border-radius: 4px;
-  background: white;
+  background: var(--color-white);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -45,7 +45,7 @@
 }
 
 .checkbox:hover {
-  border-color: #adb5bd;
+  border-color: var(--color-secondary);
 }
 
 .todo-item.completed .checkbox {
@@ -61,31 +61,33 @@
 
 .todo-text {
   font-size: 1rem;
-  color: #2c3e50;
+  color: var(--color-primary);
   font-family: 'Inter', sans-serif;
   cursor: pointer;
   word-break: break-word;
   flex: 1;
+  transition: color 0.3s ease;
 }
 
 .todo-text:hover {
-  color: #495057;
+  color: var(--color-secondary);
 }
 
 .edit-input {
   flex: 1;
   padding: 0.5rem;
-  border: 1px solid #6c757d;
+  border: 1px solid var(--color-secondary);
   border-radius: 4px;
   font-size: 1rem;
   font-family: 'Inter', sans-serif;
-  background: white;
+  background: var(--color-white);
   box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.1);
+  color: var(--color-primary);
 }
 
 .edit-input:focus {
   outline: none;
-  border-color: #495057;
+  border-color: var(--color-secondary);
 }
 
 .todo-actions {
@@ -114,13 +116,13 @@
 }
 
 .edit-btn {
-  background: #e9ecef;
-  color: #6c757d;
+  background: var(--color-border);
+  color: var(--color-secondary);
 }
 
 .edit-btn:hover {
-  background: #dee2e6;
-  color: #495057;
+  background: var(--color-light);
+  color: var(--color-primary);
 }
 
 .delete-btn {

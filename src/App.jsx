@@ -11,11 +11,25 @@ function App() {
   // State for save indicator
   const [showSaveIndicator, setShowSaveIndicator] = useState(false)
 
+  // Handle save callback to show indicator
+  const handleSave = () => {
+    setShowSaveIndicator(true)
+  }
+
   // Check system preference for dark mode
   const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
   
   // Theme state management with localStorage
   const [theme, setTheme] = useLocalStorage(STORAGE_KEYS.THEME, prefersDarkMode ? 'dark' : 'light', handleSave)
+
+  // Default todos for new users or when localStorage is empty
+  const defaultTodos = [
+    { id: 1, text: 'Review quarterly reports', completed: false },
+    { id: 2, text: 'Schedule client meeting', completed: true },
+    { id: 3, text: 'Update project documentation', completed: false },
+  ]
+
+  const [todos, setTodos] = useLocalStorage(STORAGE_KEYS.TODOS, defaultTodos, handleSave)
 
   // Apply theme to document body
   useEffect(() => {
@@ -25,18 +39,6 @@ function App() {
   // Function to toggle theme
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light')
-  }
-
-  // Default todos for new users or when localStorage is empty
-  const defaultTodos = [
-    { id: 1, text: 'Review quarterly reports', completed: false },
-    { id: 2, text: 'Schedule client meeting', completed: true },
-    { id: 3, text: 'Update project documentation', completed: false },
-  ]
-
-  // Handle save callback to show indicator
-  const handleSave = () => {
-    setShowSaveIndicator(true)
   }
 
   const [todos, setTodos] = useLocalStorage(STORAGE_KEYS.TODOS, defaultTodos, handleSave)
@@ -68,7 +70,7 @@ function App() {
   }
 
   // Development helpers - expose utilities to global scope in development
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     window.todoUtils = {
       clearAllData,
       exportData,
