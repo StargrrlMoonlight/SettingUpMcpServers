@@ -4,11 +4,23 @@ import Header from './components/Header'
 import SaveIndicator from './components/SaveIndicator'
 import useLocalStorage from './hooks/useLocalStorage'
 import { STORAGE_KEYS, clearAllData, exportData, importData } from './utils/localStorage'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { ThemeContext } from './contexts/ThemeContext'
 
 function App() {
   // State for save indicator
   const [showSaveIndicator, setShowSaveIndicator] = useState(false)
+
+  // Handle save callback to show indicator
+  const handleSave = () => {
+    setShowSaveIndicator(true)
+  }
+
+  // Check system preference for dark mode
+  const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  
+  // Theme state management with localStorage
+  const [theme, setTheme] = useLocalStorage(STORAGE_KEYS.THEME, prefersDarkMode ? 'dark' : 'light', handleSave)
 
   // Default todos for new users or when localStorage is empty
   const defaultTodos = [
@@ -17,12 +29,17 @@ function App() {
     { id: 3, text: 'Update project documentation', completed: false },
   ]
 
-  // Handle save callback to show indicator
-  const handleSave = () => {
-    setShowSaveIndicator(true)
-  }
-
   const [todos, setTodos] = useLocalStorage(STORAGE_KEYS.TODOS, defaultTodos, handleSave)
+
+  // Apply theme to document body
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
+  // Function to toggle theme
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light')
+  }
 
   const addTodo = (text) => {
     // Generate a more unique ID using timestamp + random component
@@ -51,7 +68,7 @@ function App() {
   }
 
   // Development helpers - expose utilities to global scope in development
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     window.todoUtils = {
       clearAllData,
       exportData,
@@ -77,19 +94,21 @@ Example usage:
   }
 
   return (
-    <div className="app">
-      <div className="container">
-        <Header />
-        <TodoList
-          todos={todos}
-          onAddTodo={addTodo}
-          onToggleTodo={toggleTodo}
-          onDeleteTodo={deleteTodo}
-          onEditTodo={editTodo}
-        />
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      <div className="app">
+        <div className="container">
+          <Header />
+          <TodoList
+            todos={todos}
+            onAddTodo={addTodo}
+            onToggleTodo={toggleTodo}
+            onDeleteTodo={deleteTodo}
+            onEditTodo={editTodo}
+          />
+        </div>
+        <SaveIndicator isVisible={showSaveIndicator} />
       </div>
-      <SaveIndicator isVisible={showSaveIndicator} />
-    </div>
+    </ThemeContext.Provider>
   )
 }
 

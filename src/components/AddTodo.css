@@ -3,31 +3,33 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   gap: 1rem;
-  background: rgba(248, 249, 250, 0.5);
+  background: rgba(var(--color-light-rgb), 0.5);
+  transition: background 0.3s ease;
 }
 
 .add-todo-input {
   flex: 1;
   padding: 0.875rem 1.25rem;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 1rem;
   font-family: 'Inter', sans-serif;
-  background: white;
+  background: var(--color-white);
+  color: var(--color-primary);
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-light);
 }
 
 .add-todo-input:focus {
   outline: none;
-  border-color: #6c757d;
+  border-color: var(--color-secondary);
   box-shadow: 
     0 0 0 3px rgba(108, 117, 125, 0.1),
-    0 1px 3px rgba(0, 0, 0, 0.1);
+    var(--shadow-light);
 }
 
 .add-todo-input::placeholder {
-  color: #adb5bd;
+  color: var(--color-secondary);
   font-style: italic;
 }
 
