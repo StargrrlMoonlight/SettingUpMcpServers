@@ -41,8 +41,6 @@ function App() {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light')
   }
 
-  const [todos, setTodos] = useLocalStorage(STORAGE_KEYS.TODOS, defaultTodos, handleSave)
-
   const addTodo = (text) => {
     // Generate a more unique ID using timestamp + random component
     const newTodo = {
