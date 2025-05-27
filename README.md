@@ -8,6 +8,7 @@ A sophisticated todo-list web application built with React and Vite, featuring a
 - 📱 **Responsive**: Mobile-first design that works beautifully on all devices
 - 🎯 **Task Management**: Add, edit, complete, and delete tasks
 - 🔍 **Filtering**: View all tasks, active tasks, or completed tasks
+- 💾 **Data Persistence**: Tasks are automatically saved to localStorage
 - 💫 **Smooth Animations**: Subtle transitions and hover effects
 - ♿ **Accessible**: Proper contrast ratios and keyboard navigation
 
@@ -66,11 +67,46 @@ src/
 │   ├── TodoList.jsx       # Main todo list container
 │   ├── TodoItem.jsx       # Individual todo item
 │   ├── AddTodo.jsx        # Add new todo form
+│   ├── SaveIndicator.jsx  # Visual save confirmation
 │   └── *.css              # Component-specific styles
+├── hooks/
+│   └── useLocalStorage.js # Custom hook for localStorage management
+├── utils/
+│   └── localStorage.js    # LocalStorage utilities and constants
 ├── App.jsx                # Main application component
 ├── App.css                # Global application styles
 ├── index.css              # Global CSS variables and reset
 └── main.jsx               # Application entry point
+```
+
+## Data Persistence
+
+Your tasks are automatically saved to your browser's localStorage, meaning they'll persist between sessions. The application includes:
+
+- **Automatic saving**: All changes are saved immediately
+- **Visual feedback**: A subtle "Saved" indicator appears when data is stored
+- **Data recovery**: Your tasks will be restored when you return to the app
+- **Development utilities**: Use browser console commands for data management
+
+### Development Console Utilities
+
+When running in development mode, you have access to these console commands:
+
+```javascript
+// Clear all stored data
+todoUtils.clearAllData()
+
+// Export your data as JSON
+const backup = todoUtils.exportData()
+
+// Import data from a backup
+todoUtils.importData(backup)
+
+// View current todos
+todoUtils.getCurrentTodos()
+
+// Show help
+todoUtils.help()
 ```
 
 ## Contributing
