@@ -1,25 +1,61 @@
 .header {
   padding: 3rem 2rem 2rem;
   text-align: center;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  background: linear-gradient(135deg, var(--color-header-gradient-start) 0%, var(--color-header-gradient-end) 100%);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background 0.3s ease;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .header-title {
   font-family: 'Crimson Text', serif;
   font-size: 2.5rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--color-primary);
   margin-bottom: 0.5rem;
   letter-spacing: -0.5px;
+  transition: color 0.3s ease;
 }
 
 .header-subtitle {
   font-family: 'Inter', sans-serif;
   font-size: 1rem;
   font-weight: 300;
-  color: #6c757d;
+  color: var(--color-secondary);
   letter-spacing: 0.5px;
+  transition: color 0.3s ease;
+}
+
+.theme-toggle {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-light);
+  box-shadow: var(--shadow-light);
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.theme-toggle:active {
+  transform: translateY(0);
 }
 
 @media (max-width: 768px) {
@@ -33,5 +69,11 @@
   
   .header-subtitle {
     font-size: 0.9rem;
+  }
+  
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+    font-size: 1.2rem;
   }
 }

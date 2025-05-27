@@ -1,15 +1,39 @@
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap');
 
 :root {
+  /* Light theme (default) */
   --color-primary: #2c3e50;
   --color-secondary: #6c757d;
   --color-light: #f8f9fa;
   --color-white: #ffffff;
   --color-border: #e9ecef;
+  --color-background: #f8f9fa;
+  --color-container-bg: rgba(255, 255, 255, 0.95);
+  --color-gradient-start: #f8f9fa;
+  --color-gradient-end: #e9ecef;
+  --color-header-gradient-start: #f8f9fa;
+  --color-header-gradient-end: #ffffff;
   --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
   --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.1);
   --border-radius: 8px;
   --transition: all 0.2s ease;
+}
+
+[data-theme="dark"] {
+  /* Dark theme */
+  --color-primary: #e9ecef;
+  --color-secondary: #adb5bd;
+  --color-light: #2d2d2d;
+  --color-white: #1a1a1a;
+  --color-border: #343a40;
+  --color-background: #1a1a1a;
+  --color-container-bg: rgba(45, 45, 45, 0.95);
+  --color-gradient-start: #2d2d2d;
+  --color-gradient-end: #1a1a1a;
+  --color-header-gradient-start: #2d2d2d;
+  --color-header-gradient-end: #1a1a1a;
+  --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 * {
@@ -28,10 +52,11 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, var(--color-gradient-start) 0%, var(--color-gradient-end) 100%);
   color: var(--color-primary);
   line-height: 1.6;
   min-height: 100vh;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 button {
