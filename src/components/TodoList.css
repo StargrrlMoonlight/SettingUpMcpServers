@@ -84,3 +84,45 @@
     padding: 2rem 1rem;
   }
 }
+
+/* Vibe theme todo list styles */
+[data-theme="vibe"] .todo-stats {
+  background: rgba(26, 13, 46, 0.6);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+[data-theme="vibe"] .stats-text {
+  color: var(--color-electric-blue);
+  text-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
+  font-weight: 500;
+}
+
+[data-theme="vibe"] .filter-buttons {
+  background: rgba(26, 13, 46, 0.4);
+  border-bottom: 1px solid rgba(184, 69, 255, 0.3);
+}
+
+[data-theme="vibe"] .filter-btn {
+  background: transparent;
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  color: var(--color-electric-blue);
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+}
+
+[data-theme="vibe"] .filter-btn:hover {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: var(--color-electric-blue);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+[data-theme="vibe"] .filter-btn.active {
+  background: linear-gradient(135deg, var(--color-electric-blue), var(--color-neon-purple));
+  color: white;
+  border-color: var(--color-electric-blue);
+  box-shadow: 
+    0 0 15px rgba(0, 212, 255, 0.4),
+    0 0 25px rgba(184, 69, 255, 0.2);
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}

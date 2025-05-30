@@ -49,3 +49,19 @@
     font-size: 0.8125rem;
   }
 }
+
+/* Vibe theme save indicator styles */
+[data-theme="vibe"] .save-indicator {
+  background: linear-gradient(135deg, var(--color-laser-green), var(--color-electric-blue));
+  border: 1px solid rgba(0, 255, 136, 0.5);
+  box-shadow: 
+    0 4px 20px rgba(0, 255, 136, 0.3),
+    0 0 30px rgba(0, 212, 255, 0.2);
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  animation: slideIn 0.3s ease-out, vibeGlow 2s ease-in-out infinite alternate;
+}
+
+[data-theme="vibe"] .save-icon {
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8));
+}

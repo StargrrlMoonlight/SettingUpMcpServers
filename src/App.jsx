@@ -19,7 +19,7 @@ function App() {
   // Check system preference for dark mode
   const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
   
-  // Theme state management with localStorage
+  // Theme state management with localStorage - now supports multiple themes
   const [theme, setTheme] = useLocalStorage(STORAGE_KEYS.THEME, prefersDarkMode ? 'dark' : 'light', handleSave)
 
   // Default todos for new users or when localStorage is empty
@@ -36,9 +36,16 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
 
-  // Function to toggle theme
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light')
+  // Function to cycle through themes: light -> dark -> vibe -> light
+  const cycleTheme = () => {
+    setTheme(prevTheme => {
+      switch (prevTheme) {
+        case 'light': return 'dark'
+        case 'dark': return 'vibe'
+        case 'vibe': return 'light'
+        default: return 'light'
+      }
+    })
   }
 
   const addTodo = (text) => {
@@ -94,7 +101,7 @@ Example usage:
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, cycleTheme }}>
       <div className="app">
         <div className="container">
           <Header />

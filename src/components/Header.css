@@ -24,6 +24,28 @@
   transition: color 0.3s ease;
 }
 
+/* Vibe theme typing animation for header title */
+[data-theme="vibe"] .header-title {
+  background: linear-gradient(90deg, 
+    var(--color-electric-blue),
+    var(--color-neon-purple),
+    var(--color-laser-green),
+    var(--color-electric-blue)
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: 
+    var(--animation-pulse),
+    vibeTextGradient 3s ease infinite;
+}
+
+@keyframes vibeTextGradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
 .header-subtitle {
   font-family: 'Inter', sans-serif;
   font-size: 1rem;
@@ -76,4 +98,58 @@
     height: 36px;
     font-size: 1.2rem;
   }
+}
+
+/* Vibe theme header styles */
+[data-theme="vibe"] .header {
+  background: linear-gradient(135deg, var(--color-neon-purple) 0%, var(--color-electric-blue) 50%, var(--color-laser-green) 100%);
+  background-size: 200% 200%;
+  animation: vibeBackground 4s ease infinite;
+  position: relative;
+}
+
+[data-theme="vibe"] .header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(26, 13, 46, 0.8);
+  backdrop-filter: blur(2px);
+}
+
+[data-theme="vibe"] .header-content {
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme="vibe"] .header-title {
+  color: var(--color-primary);
+  text-shadow: 
+    0 0 10px rgba(0, 212, 255, 0.5),
+    0 0 20px rgba(184, 69, 255, 0.3);
+  animation: var(--animation-pulse);
+}
+
+[data-theme="vibe"] .header-subtitle {
+  color: var(--color-secondary);
+  text-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+}
+
+[data-theme="vibe"] .theme-toggle {
+  background: linear-gradient(135deg, var(--color-electric-blue), var(--color-neon-purple));
+  box-shadow: 
+    var(--shadow-glow),
+    0 0 15px rgba(0, 212, 255, 0.3);
+  border: 1px solid rgba(0, 212, 255, 0.5);
+  animation: var(--animation-glow);
+}
+
+[data-theme="vibe"] .theme-toggle:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 
+    var(--shadow-glow),
+    0 0 25px rgba(0, 212, 255, 0.5),
+    0 0 35px rgba(184, 69, 255, 0.3);
 }

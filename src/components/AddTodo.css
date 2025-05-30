@@ -70,3 +70,57 @@
     width: 100%;
   }
 }
+
+/* Vibe theme add todo styles */
+[data-theme="vibe"] .add-todo {
+  background: rgba(26, 13, 46, 0.8);
+  border-bottom: 1px solid rgba(184, 69, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+[data-theme="vibe"] .add-todo-input {
+  background: rgba(26, 13, 46, 0.6);
+  border: 2px solid rgba(0, 212, 255, 0.3);
+  color: var(--color-primary);
+  box-shadow: 
+    0 0 10px rgba(0, 212, 255, 0.1),
+    inset 0 0 20px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(5px);
+}
+
+[data-theme="vibe"] .add-todo-input:focus {
+  border-color: var(--color-electric-blue);
+  box-shadow: 
+    0 0 20px rgba(0, 212, 255, 0.4),
+    0 0 0 3px rgba(0, 212, 255, 0.1),
+    inset 0 0 20px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="vibe"] .add-todo-input::placeholder {
+  color: var(--color-secondary);
+  text-shadow: 0 0 3px rgba(0, 212, 255, 0.2);
+}
+
+[data-theme="vibe"] .add-todo-btn {
+  background: linear-gradient(135deg, var(--color-neon-purple), var(--color-electric-blue));
+  border: 1px solid rgba(0, 212, 255, 0.5);
+  color: white;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 4px 15px rgba(184, 69, 255, 0.3),
+    0 0 20px rgba(0, 212, 255, 0.2);
+  animation: var(--animation-glow);
+}
+
+[data-theme="vibe"] .add-todo-btn:hover {
+  background: linear-gradient(135deg, var(--color-electric-blue), var(--color-laser-green));
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 6px 25px rgba(0, 212, 255, 0.4),
+    0 0 30px rgba(0, 255, 136, 0.3);
+}
+
+[data-theme="vibe"] .add-todo-btn:active {
+  transform: translateY(-1px) scale(1.01);
+}

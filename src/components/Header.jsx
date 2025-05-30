@@ -2,7 +2,25 @@ import './Header.css'
 import { useTheme } from '../contexts/ThemeContext'
 
 function Header() {
-  const { theme, toggleTheme } = useTheme()
+  const { theme, cycleTheme } = useTheme()
+  
+  const getThemeIcon = () => {
+    switch (theme) {
+      case 'light': return '☀️'
+      case 'dark': return '🌙'
+      case 'vibe': return '🌈'
+      default: return '☀️'
+    }
+  }
+  
+  const getNextTheme = () => {
+    switch (theme) {
+      case 'light': return 'dark'
+      case 'dark': return 'vibe'
+      case 'vibe': return 'light'
+      default: return 'dark'
+    }
+  }
   
   return (
     <header className="header">
@@ -13,10 +31,11 @@ function Header() {
         </div>
         <button 
           className="theme-toggle" 
-          onClick={toggleTheme} 
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          onClick={cycleTheme} 
+          aria-label={`Switch to ${getNextTheme()} mode`}
+          title={`Current: ${theme} theme. Click to switch to ${getNextTheme()}`}
         >
-          {theme === 'light' ? '🌙' : '☀️'}
+          {getThemeIcon()}
         </button>
       </div>
     </header>
