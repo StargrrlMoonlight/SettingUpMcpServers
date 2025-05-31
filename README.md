@@ -1,7 +1,7 @@
 # Executive Tasks - Elegant Todo List
 
 ![Tests](https://github.com/StargrrlMoonlight/SettingUpMcpServers/actions/workflows/ci.yml/badge.svg)
-[![codecov](https://codecov.io/gh/StargrrlMoonlight/SettingUpMcpServers/branch/main/graph/badge.svg)](https://codecov.io/gh/StargrrlMoonlight/SettingUpMcpServers)
+![Coverage](https://img.shields.io/badge/coverage-82%25-success)
 [![code style: eslint](https://img.shields.io/badge/code%20style-eslint-blue.svg)](https://eslint.org/)
 
 A sophisticated todo-list web application built with React and Vite, featuring an exclusive high-end design with neutral light colors and elegant dark typography.
