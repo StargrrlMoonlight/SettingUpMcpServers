@@ -100,11 +100,59 @@ npm run preview          # Preview production build locally
 npm run lint             # Run ESLint
 npm run lint:fix         # Fix ESLint errors automatically
 
-# Testing (when implemented)
+# Testing
 npm run test             # Run tests
 npm run test:watch       # Run tests in watch mode
 npm run test:coverage    # Run tests with coverage report
 ```
+
+## 🧪 Testing Framework
+
+This project uses a comprehensive testing framework to ensure code quality and prevent regressions.
+
+### Testing Technology Stack
+- **Vitest**: Fast, Vite-native testing framework
+- **React Testing Library**: For testing React components
+- **JSDOM**: Browser environment simulation
+- **@testing-library/user-event**: For simulating user interactions
+- **Codecov**: Coverage reporting and visualization
+
+### Test Structure
+- **Unit Tests**: Located alongside source files (e.g., `Component.test.jsx`)
+- **Integration Tests**: Located in `src/test` directory
+- **Test Setup**: Global setup in `src/test/setup.js`
+- **Mocks**: Browser APIs mocked in setup file
+
+### Running Tests
+```bash
+# Run all tests
+npm run test
+
+# Run tests in watch mode (development)
+npm run test:watch
+
+# Run tests with coverage reporting
+npm run test:coverage
+
+# Run a specific test file
+npm run test -- TodoItem.test.jsx
+```
+
+### Coverage Requirements
+The project maintains a minimum of 80% code coverage across:
+- Statements
+- Branches
+- Functions
+- Lines
+
+Coverage reports are generated in the `coverage` directory and can be viewed by opening `coverage/index.html`.
+
+### CI/CD Integration
+Tests are automatically run on:
+- Pull request creation/updates
+- Pushes to main branch
+
+Failed tests block merging to maintain code quality.
 
 ## 🔧 Development Workflow
 
