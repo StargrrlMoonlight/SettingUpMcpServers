@@ -18,7 +18,7 @@ function App() {
 
   // Check system preference for dark mode
   const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-  
+
   // Theme state management with localStorage - now supports multiple themes
   const [theme, setTheme] = useLocalStorage(STORAGE_KEYS.THEME, prefersDarkMode ? 'dark' : 'light', handleSave)
 
@@ -113,7 +113,10 @@ Example usage:
             onEditTodo={editTodo}
           />
         </div>
-        <SaveIndicator isVisible={showSaveIndicator} />
+        <SaveIndicator
+          show={showSaveIndicator}
+          onHide={() => setShowSaveIndicator(false)}
+        />
       </div>
     </ThemeContext.Provider>
   )

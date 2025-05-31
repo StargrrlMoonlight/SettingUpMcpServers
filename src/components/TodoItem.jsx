@@ -5,19 +5,23 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(todo.text)
 
-  const handleEdit = () => {
+  const handleSave = () => {
     if (editText.trim()) {
       onEdit(todo.id, editText.trim())
       setIsEditing(false)
     }
   }
 
+  const handleCancel = () => {
+    setEditText(todo.text)
+    setIsEditing(false)
+  }
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-      handleEdit()
+      handleSave()
     } else if (e.key === 'Escape') {
-      setEditText(todo.text)
-      setIsEditing(false)
+      handleCancel()
     }
   }
 
@@ -26,6 +30,8 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }) {
       <div className="todo-content">
         <button
           className="checkbox"
+          role="checkbox"
+          aria-checked={todo.completed}
           onClick={() => onToggle(todo.id)}
           aria-label={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
         >
@@ -33,18 +39,20 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }) {
         </button>
 
         {isEditing ? (
-          <input
-            type="text"
-            className="edit-input"
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
-            onBlur={handleEdit}
-            onKeyDown={handleKeyPress}
-            autoFocus
-          />
+          <>
+            <input
+              type="text"
+              className="edit-input"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={handleKeyPress}
+              autoFocus
+            />
+          </>
         ) : (
-          <span 
+          <span
             className="todo-text"
+            onClick={() => onToggle(todo.id)}
             onDoubleClick={() => setIsEditing(true)}
           >
             {todo.text}
@@ -53,20 +61,41 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }) {
       </div>
 
       <div className="todo-actions">
-        <button
-          className="edit-btn"
-          onClick={() => setIsEditing(true)}
-          aria-label="Edit task"
-        >
-          ✎
-        </button>
-        <button
-          className="delete-btn"
-          onClick={() => onDelete(todo.id)}
-          aria-label="Delete task"
-        >
-          ×
-        </button>
+        {isEditing ? (
+          <>
+            <button
+              className="save-btn"
+              onClick={handleSave}
+              aria-label="Save"
+            >
+              Save
+            </button>
+            <button
+              className="cancel-btn"
+              onClick={handleCancel}
+              aria-label="Cancel"
+            >
+              Cancel
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              className="edit-btn"
+              onClick={() => setIsEditing(true)}
+              aria-label="Edit task"
+            >
+              ✎
+            </button>
+            <button
+              className="delete-btn"
+              onClick={() => onDelete(todo.id)}
+              aria-label="Delete task"
+            >
+              ×
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
