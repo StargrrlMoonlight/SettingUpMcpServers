@@ -14,7 +14,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
-    "test:ci": "vitest run --coverage --reporter=verbose",
+    "test:ci": "vitest run --coverage --reporter=verbose --coverage-reporter=json-summary",
     "test:a11y": "start-server-and-test preview http://localhost:4173 'npx @axe-core/cli http://localhost:4173'"
   },
   "dependencies": {
