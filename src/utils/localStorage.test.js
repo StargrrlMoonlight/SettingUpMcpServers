@@ -63,14 +63,14 @@ describe('localStorage utilities', () => {
 
     describe('exportData', () => {
         it('should export all stored data as JSON object', () => {
-            localStorage.setItem('executive-tasks-todos', JSON.stringify([{ id: 1, text: 'test' }]))
-            localStorage.setItem('executive-tasks-theme', JSON.stringify('dark'))
+            localStorage.setItem('executiveTasks_todos', JSON.stringify([{ id: 1, text: 'test' }]))
+            localStorage.setItem('executiveTasks_theme', JSON.stringify('dark'))
 
             // Mock localStorage.getItem to return our test data
             localStorage.getItem.mockImplementation((key) => {
                 const data = {
-                    'executive-tasks-todos': JSON.stringify([{ id: 1, text: 'test' }]),
-                    'executive-tasks-theme': JSON.stringify('dark')
+                    'executiveTasks_todos': JSON.stringify([{ id: 1, text: 'test' }]),
+                    'executiveTasks_theme': JSON.stringify('dark')
                 }
                 return data[key] || null
             })
@@ -92,8 +92,8 @@ describe('localStorage utilities', () => {
 
             importData(testData)
 
-            expect(localStorage.setItem).toHaveBeenCalledWith('executive-tasks-todos', JSON.stringify(testData.todos))
-            expect(localStorage.setItem).toHaveBeenCalledWith('executive-tasks-theme', JSON.stringify(testData.theme))
+            expect(localStorage.setItem).toHaveBeenCalledWith('executiveTasks_todos', JSON.stringify(testData.todos))
+            expect(localStorage.setItem).toHaveBeenCalledWith('executiveTasks_theme', JSON.stringify(testData.theme))
         })
 
         it('should handle empty import data', () => {

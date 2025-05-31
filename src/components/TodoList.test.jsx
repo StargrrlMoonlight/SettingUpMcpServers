@@ -33,7 +33,7 @@ describe('TodoList Component', () => {
     it('displays correct todo statistics', () => {
         render(<TodoList {...defaultProps} />)
 
-        expect(screen.getByText('2 active, 1 completed')).toBeInTheDocument()
+        expect(screen.getByText('2 active, 1 completed (33%)')).toBeInTheDocument()
     })
 
     it('renders filter buttons', () => {
@@ -136,14 +136,14 @@ describe('TodoList Component', () => {
     it('handles empty todo list gracefully', () => {
         render(<TodoList {...defaultProps} todos={[]} />)
 
-        expect(screen.getByText('0 active, 0 completed')).toBeInTheDocument()
+        expect(screen.getByText('0 active, 0 completed (0%)')).toBeInTheDocument()
         expect(screen.getByPlaceholderText(/add a new task/i)).toBeInTheDocument()
     })
 
     it('updates statistics when todos change', () => {
         const { rerender } = render(<TodoList {...defaultProps} />)
 
-        expect(screen.getByText('2 active, 1 completed')).toBeInTheDocument()
+        expect(screen.getByText('2 active, 1 completed (33%)')).toBeInTheDocument()
 
         const updatedTodos = [
             { id: 1, text: 'Active todo 1', completed: true },
@@ -152,6 +152,6 @@ describe('TodoList Component', () => {
         ]
 
         rerender(<TodoList {...defaultProps} todos={updatedTodos} />)
-        expect(screen.getByText('1 active, 2 completed')).toBeInTheDocument()
+        expect(screen.getByText('1 active, 2 completed (67%)')).toBeInTheDocument()
     })
 })

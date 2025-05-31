@@ -30,7 +30,7 @@ describe('Header Component', () => {
             </TestWrapper>
         )
 
-        expect(screen.getByRole('button', { name: /switch to dark mode/i })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /current.*light.*theme.*click.*switch.*dark/i })).toBeInTheDocument()
     })
 
     it('displays current theme icon', () => {
@@ -64,7 +64,7 @@ describe('Header Component', () => {
             </TestWrapper>
         )
 
-        const themeButton = screen.getByRole('button', { name: /switch to dark mode/i })
+        const themeButton = screen.getByRole('button', { name: /current.*light.*theme.*click.*switch.*dark/i })
         await user.click(themeButton)
 
         expect(mockCycleTheme).toHaveBeenCalled()

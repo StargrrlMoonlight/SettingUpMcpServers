@@ -3,8 +3,8 @@
  */
 
 export const STORAGE_KEYS = {
-  TODOS: 'executive-tasks-todos',
-  THEME: 'executive-tasks-theme',
+  TODOS: 'executiveTasks_todos',
+  THEME: 'executiveTasks_theme',
   FILTERS: 'executive-tasks-filters'
 }
 

@@ -33,7 +33,7 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }) {
           role="checkbox"
           aria-checked={todo.completed}
           onClick={() => onToggle(todo.id)}
-          aria-label={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
+          aria-label={`Toggle ${todo.text}`}
         >
           {todo.completed && <span className="checkmark">✓</span>}
         </button>
@@ -83,14 +83,14 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }) {
             <button
               className="edit-btn"
               onClick={() => setIsEditing(true)}
-              aria-label="Edit task"
+              aria-label={`Edit ${todo.text}`}
             >
               ✎
             </button>
             <button
               className="delete-btn"
               onClick={() => onDelete(todo.id)}
-              aria-label="Delete task"
+              aria-label={`Delete ${todo.text}`}
             >
               ×
             </button>

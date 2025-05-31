@@ -15,7 +15,7 @@ Object.defineProperty(window, 'localStorage', {
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: vi.fn().mockImplementation(query => ({
-        matches: false,
+        matches: false, // Default to false for light mode
         media: query,
         onchange: null,
         addListener: vi.fn(), // deprecated
