@@ -13,7 +13,7 @@ function AddTodo({ onAddTodo }) {
   }
 
   return (
-    <form className="add-todo" onSubmit={handleSubmit}>
+    <form className="add-todo" onSubmit={handleSubmit} role="form">
       <input
         type="text"
         className="add-todo-input"
