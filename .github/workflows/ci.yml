@@ -117,19 +117,30 @@ jobs:
     - name: Install dependencies
       run: npm ci
         
-    - name: Install browser-driver-manager
-      run: npm install -g browser-driver-manager
-      
-    - name: Install matching Chrome and ChromeDriver
-      run: npx browser-driver-manager install chrome
-      
+    - name: Setup Chrome for testing
+      run: |
+        # Install Chrome and ChromeDriver directly
+        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+        
+        # Get Chrome version and install matching ChromeDriver
+        CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d. -f1)
+        echo "Detected Chrome version: $CHROME_VERSION"
+        
+        # Install ChromeDriver that matches Chrome version
+        npm install -g chromedriver@$CHROME_VERSION
+        
     - name: Run accessibility tests
       run: |
-        # Set environment variables from browser-driver-manager
-        export CHROME_TEST_PATH=$(npx browser-driver-manager chrome path)
-        export CHROMEDRIVER_TEST_PATH=$(npx browser-driver-manager chromedriver path)
-        echo "Using Chrome: $CHROME_TEST_PATH"
-        echo "Using ChromeDriver: $CHROMEDRIVER_TEST_PATH"
+        # Set environment variables for axe testing
+        export CHROME_BIN=$(which google-chrome)
+        export CHROMEDRIVER_BIN=$(which chromedriver)
+        echo "Using Chrome: $CHROME_BIN"
+        echo "Using ChromeDriver: $CHROMEDRIVER_BIN"
         
         npm run build
-        npm run test:a11y
+        
+        # Run axe with explicit ChromeDriver path
+        npx start-server-and-test preview http://localhost:4173 "npx @axe-core/cli http://localhost:4173 --chromedriver-path $CHROMEDRIVER_BIN"
