@@ -1,6 +1,6 @@
 # Executive Tasks - Elegant Todo List
 
-![Tests](https://github.com/StargrrlMoonlight/SettingUpMcpServers/actions/workflows/ci.yml/badge.svg)
+![CI/CD Status](https://github.com/StargrrlMoonlight/SettingUpMcpServers/actions/workflows/ci.yml/badge.svg?branch=main)
 ![Coverage](https://img.shields.io/badge/coverage-82%25-success)
 [![code style: eslint](https://img.shields.io/badge/code%20style-eslint-blue.svg)](https://eslint.org/)
 
