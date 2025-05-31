@@ -104,6 +104,7 @@ npm run lint:fix         # Fix ESLint errors automatically
 npm run test             # Run tests
 npm run test:watch       # Run tests in watch mode
 npm run test:coverage    # Run tests with coverage report
+npm run test:ci          # Run tests in CI mode
 ```
 
 ## 🧪 Testing Framework
@@ -153,6 +154,17 @@ Tests are automatically run on:
 - Pushes to main branch
 
 Failed tests block merging to maintain code quality.
+
+The CI/CD pipeline performs the following steps:
+1. **Linting**: ESLint checks code quality and style
+2. **Testing**: Runs all tests with coverage reporting
+3. **Coverage Check**: Verifies coverage meets thresholds (80%)
+4. **Build**: Builds the application to verify production readiness
+5. **Accessibility**: Runs axe-core checks on the built application
+
+The workflow runs on multiple Node.js versions (18.x and 20.x) to ensure cross-version compatibility.
+
+Code coverage reports are automatically published to Codecov, and a badge in the README shows the current coverage percentage.
 
 ## 🔧 Development Workflow
 
