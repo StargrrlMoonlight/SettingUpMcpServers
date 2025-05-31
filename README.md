@@ -50,6 +50,40 @@ The application follows a minimalist design approach with:
 
 4. Open your browser and visit `http://localhost:5173`
 
+## 🤝 Contributing
+
+We welcome contributions! Please see our contribution guidelines to get started:
+
+- 📋 **[Contributing Guide](CONTRIBUTING.md)** - Complete guide for contributors
+- 🛠 **[Development Setup](docs/DEVELOPMENT_SETUP.md)** - Detailed setup instructions
+- 📝 **[Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)** - PR guidelines
+
+### Quick Start for Contributors
+
+1. **Check Issues**: Browse [open issues](https://github.com/StargrrlMoonlight/SettingUpMcpServers/issues)
+2. **Fork & Clone**: Fork the repo and clone your fork
+3. **Create Branch**: `git checkout -b feature/issue-{number}-{description}`
+4. **Make Changes**: Follow our coding standards and design guidelines
+5. **Test**: Ensure your changes work on all devices
+6. **Submit PR**: Create a pull request referencing the issue
+
+### Development Workflow
+
+We follow **GitHub Flow** with issue-driven development:
+- Every change starts with a GitHub issue
+- Feature branches for all development work  
+- Pull requests require review before merging
+- Clean commit history with conventional commits
+
+## 🎯 Current Roadmap
+
+### Priority Features
+- 📅 **Due Dates & Priority Levels** - Help users manage time and focus
+- 🏷️ **Categories & Tags** - Organize tasks by project or context  
+- 🎯 **Drag & Drop Reordering** - Visual task prioritization
+
+See our [Issues](https://github.com/StargrrlMoonlight/SettingUpMcpServers/issues) for detailed feature requests and bug reports.
+
 ### Building for Production
 
 ```bash

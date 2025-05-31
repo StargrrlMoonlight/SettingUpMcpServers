@@ -1,0 +1,21 @@
+# Global code owners - automatically assigned to all PRs
+* @StargrrlMoonlight
+
+# Specific file patterns for focused reviews
+*.js @StargrrlMoonlight
+*.jsx @StargrrlMoonlight
+*.ts @StargrrlMoonlight
+*.tsx @StargrrlMoonlight
+*.css @StargrrlMoonlight
+
+# Documentation
+*.md @StargrrlMoonlight
+docs/ @StargrrlMoonlight
+
+# Configuration files
+package.json @StargrrlMoonlight
+vite.config.js @StargrrlMoonlight
+eslint.config.js @StargrrlMoonlight
+
+# GitHub workflow and templates
+.github/ @StargrrlMoonlight
