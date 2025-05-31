@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from '../App'
 
@@ -378,7 +378,7 @@ describe('App Integration Tests', () => {
             const user = userEvent.setup()
             render(<App />)
 
-            const input = screen.getByRole('textbox', { name: /add new task/i })
+            // Find add button directly without referencing the input
             const addButton = screen.getByRole('button', { name: /add task/i })
 
             // Try to add empty todo
