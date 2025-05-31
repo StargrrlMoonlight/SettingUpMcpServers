@@ -3,18 +3,40 @@
  */
 
 export const STORAGE_KEYS = {
-  TODOS: 'executive-tasks-todos',
-  THEME: 'executive-tasks-theme',
+  TODOS: 'executiveTasks_todos',
+  THEME: 'executiveTasks_theme',
   FILTERS: 'executive-tasks-filters'
+}
+
+/**
+ * Get data from localStorage with fallback
+ */
+export const getStoredData = (key, fallback) => {
+  try {
+    const item = localStorage.getItem(key)
+    return item ? JSON.parse(item) : fallback
+  } catch (error) {
+    console.warn(`Error parsing localStorage item ${key}:`, error)
+    return fallback
+  }
+}
+
+/**
+ * Set data in localStorage
+ */
+export const setStoredData = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch (error) {
+    console.warn(`Error storing data to localStorage ${key}:`, error)
+  }
 }
 
 /**
  * Clear all application data from localStorage
  */
 export const clearAllData = () => {
-  Object.values(STORAGE_KEYS).forEach(key => {
-    localStorage.removeItem(key)
-  })
+  localStorage.clear()
   console.log('All application data cleared from localStorage')
 }
 

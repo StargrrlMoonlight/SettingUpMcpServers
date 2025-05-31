@@ -1,24 +1,29 @@
 import { useState, useEffect } from 'react'
 import './SaveIndicator.css'
 
-function SaveIndicator({ isVisible }) {
-  const [show, setShow] = useState(false)
+function SaveIndicator({ show, onHide }) {
+  const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    if (isVisible) {
-      setShow(true)
+    if (show) {
+      setIsVisible(true)
       const timer = setTimeout(() => {
-        setShow(false)
+        setIsVisible(false)
+        if (onHide) {
+          onHide()
+        }
       }, 2000) // Show for 2 seconds
 
       return () => clearTimeout(timer)
+    } else {
+      setIsVisible(false)
     }
-  }, [isVisible])
+  }, [show, onHide])
 
-  if (!show) return null
+  if (!isVisible) return null
 
   return (
-    <div className="save-indicator">
+    <div className="save-indicator" role="status" aria-live="polite">
       <span className="save-icon">✓</span>
       <span className="save-text">Saved</span>
     </div>

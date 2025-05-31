@@ -179,6 +179,35 @@ npm run test:coverage # Run tests with coverage
 - Test React components with React Testing Library
 - Ensure accessibility testing
 - Maintain minimum 80% code coverage
+- Focus on testing behavior, not implementation details
+- Use test data and fixtures instead of production data
+
+### Testing Architecture
+- **Framework**: Vitest (fast, Vite-native testing framework)
+- **Component Testing**: React Testing Library for DOM testing
+- **Environment**: JSDOM for browser API simulation
+- **Coverage**: V8 provider with HTML/JSON reporting
+- **Utilities**: Custom test setup with mocks for browser APIs
+
+### Best Practices
+- Write tests before implementing features (TDD)
+- Use descriptive test names (given/when/then format)
+- Group related tests with nested describes
+- Mock external dependencies and services
+- Test edge cases and error handling
+- Avoid testing third-party libraries
+- Write integration tests for critical user flows
+
+### CI/CD Pipeline
+- All tests run automatically on pull requests
+- GitHub Actions workflow enforces quality gates:
+  - All tests must pass
+  - Code coverage must be at least 80%
+  - ESLint checks must pass
+  - Build must succeed
+- Failed checks block merging
+- Coverage reports are generated and published
+- Codecov integration for coverage visualization
 
 ## 📦 Building and Deployment
 

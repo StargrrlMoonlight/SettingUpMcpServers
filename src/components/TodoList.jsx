@@ -15,30 +15,32 @@ function TodoList({ todos, onAddTodo, onToggleTodo, onDeleteTodo, onEditTodo }) 
   const completedCount = todos.filter(todo => todo.completed).length
   const activeCount = todos.length - completedCount
 
+  const completionPercentage = todos.length > 0 ? Math.round((completedCount / todos.length) * 100) : 0
+
   return (
-    <div className="todo-list">
+    <main className="todo-list" role="main">
       <AddTodo onAddTodo={onAddTodo} />
-      
+
       <div className="todo-stats">
         <span className="stats-text">
-          {activeCount} active, {completedCount} completed
+          {activeCount} active, {completedCount} completed ({completionPercentage}%)
         </span>
       </div>
 
       <div className="filter-buttons">
-        <button 
+        <button
           className={filter === 'all' ? 'filter-btn active' : 'filter-btn'}
           onClick={() => setFilter('all')}
         >
           All
         </button>
-        <button 
+        <button
           className={filter === 'active' ? 'filter-btn active' : 'filter-btn'}
           onClick={() => setFilter('active')}
         >
           Active
         </button>
-        <button 
+        <button
           className={filter === 'completed' ? 'filter-btn active' : 'filter-btn'}
           onClick={() => setFilter('completed')}
         >
@@ -47,23 +49,26 @@ function TodoList({ todos, onAddTodo, onToggleTodo, onDeleteTodo, onEditTodo }) 
       </div>
 
       <div className="todos-container">
-        {filteredTodos.length === 0 ? (
-          <div className="empty-state">
-            <p>No tasks found</p>
-          </div>
-        ) : (
-          filteredTodos.map(todo => (
-            <TodoItem
-              key={todo.id}
-              todo={todo}
-              onToggle={onToggleTodo}
-              onDelete={onDeleteTodo}
-              onEdit={onEditTodo}
-            />
-          ))
-        )}
+        <ul className="todos-list" role="list">
+          {filteredTodos.length === 0 ? (
+            <li className="empty-state">
+              <p>No tasks found</p>
+            </li>
+          ) : (
+            filteredTodos.map(todo => (
+              <li key={todo.id} role="listitem">
+                <TodoItem
+                  todo={todo}
+                  onToggle={onToggleTodo}
+                  onDelete={onDeleteTodo}
+                  onEdit={onEditTodo}
+                />
+              </li>
+            ))
+          )}
+        </ul>
       </div>
-    </div>
+    </main>
   )
 }
 
