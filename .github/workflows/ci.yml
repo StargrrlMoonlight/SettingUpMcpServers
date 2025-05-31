@@ -46,9 +46,19 @@ jobs:
         # Install jq if not already installed
         sudo apt-get update && sudo apt-get install -y jq bc
         
+        # Verify the coverage summary file exists
+        if [ ! -f "coverage/coverage-summary.json" ]; then
+          echo "Error: coverage-summary.json not found. Ensure test:ci is generating the file correctly."
+          exit 1
+        fi
+        
         # Extract coverage percentage from the coverage summary
         COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
         echo "Coverage: $COVERAGE%"
+        
+        # List coverage directory contents for debugging
+        echo "Coverage directory contents:"
+        ls -la coverage/
         
         # Determine badge color based on coverage
         if (( $(echo "$COVERAGE >= 90" | bc -l) )); then
@@ -112,8 +122,14 @@ jobs:
       
     - name: Install matching Chrome and ChromeDriver
       run: npx browser-driver-manager install chrome
-        
+      
     - name: Run accessibility tests
       run: |
+        # Set environment variables from browser-driver-manager
+        export CHROME_TEST_PATH=$(npx browser-driver-manager chrome path)
+        export CHROMEDRIVER_TEST_PATH=$(npx browser-driver-manager chromedriver path)
+        echo "Using Chrome: $CHROME_TEST_PATH"
+        echo "Using ChromeDriver: $CHROMEDRIVER_TEST_PATH"
+        
         npm run build
         npm run test:a11y
