@@ -1,10 +1,16 @@
 # Executive Tasks - Elegant Todo List
 
-![CI/CD Status](https://github.com/StargrrlMoonlight/SettingUpMcpServers/actions/workflows/ci.yml/badge.svg?branch=main)
+![CI Status](https://github.com/StargrrlMoonlight/SettingUpMcpServers/actions/workflows/ci.yml/badge.svg?branch=main)
+![CD Status](https://github.com/StargrrlMoonlight/SettingUpMcpServers/actions/workflows/cd.yml/badge.svg?branch=main)
 ![Coverage](https://img.shields.io/badge/coverage-82%25-success)
 [![code style: eslint](https://img.shields.io/badge/code%20style-eslint-blue.svg)](https://eslint.org/)
 
 A sophisticated todo-list web application built with React and Vite, featuring an exclusive high-end design with neutral light colors and elegant dark typography.
+
+## 🚀 Live Demo
+
+- **Production**: [https://stargrrlmoonlight.github.io/SettingUpMcpServers](https://stargrrlmoonlight.github.io/SettingUpMcpServers)
+- **Staging**: Available after CI/CD pipeline completion
 
 ## Features
 
@@ -31,6 +37,30 @@ The application follows a minimalist design approach with:
 - **Vite** - Fast build tool and development server
 - **CSS3** - Custom styling with CSS variables and modern techniques
 - **Google Fonts** - Crimson Text and Inter for elegant typography
+
+## 🔄 CI/CD Workflows
+
+This project uses separate Continuous Integration and Continuous Deployment workflows for better organization and security:
+
+### Continuous Integration (CI)
+- **Triggers**: Every push and pull request to main branch
+- **Matrix Testing**: Tests on Node.js 18.x and 20.x
+- **Quality Gates**: ESLint linting, automated testing with coverage, accessibility testing
+- **Artifacts**: Build artifacts stored for 30 days with commit hash naming
+- **Coverage**: Automatic README badge updates with coverage percentage
+
+### Continuous Deployment (CD)
+- **Staging**: Automatic deployment to GitHub Pages after successful CI
+- **Production**: Manual approval required for production deployment
+- **Health Checks**: Automated post-deployment verification
+- **Rollback**: Manual rollback capability (when needed)
+- **Environments**: Separate staging and production environments with protection rules
+
+### Release Management
+- **Automated Releases**: Created on version tags (v1.0.0 format)
+- **Manual Releases**: Triggered via workflow dispatch with custom versioning
+- **Changelog**: Auto-generated from commit messages
+- **Assets**: Release packages in both tar.gz and zip formats
 
 ## Getting Started
 
