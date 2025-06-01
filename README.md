@@ -88,6 +88,7 @@ This project uses separate Continuous Integration and Continuous Deployment work
 
 We welcome contributions! Please see our contribution guidelines to get started:
 
+- 🔄 **[Development Workflow](DEVELOPMENT.md)** - Complete development process and branch protection setup
 - 📋 **[Contributing Guide](CONTRIBUTING.md)** - Complete guide for contributors
 - 🛠 **[Development Setup](docs/DEVELOPMENT_SETUP.md)** - Detailed setup instructions
 - 📝 **[Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)** - PR guidelines
@@ -106,8 +107,11 @@ We welcome contributions! Please see our contribution guidelines to get started:
 We follow **GitHub Flow** with issue-driven development:
 - Every change starts with a GitHub issue
 - Feature branches for all development work  
-- Pull requests require review before merging
+- Pull requests require GitHub Copilot review before merging
 - Clean commit history with conventional commits
+- Branch protection with CI/CD quality gates
+
+📖 **See [DEVELOPMENT.md](DEVELOPMENT.md) for complete workflow details and branch protection setup**
 
 ## 🎯 Current Roadmap
 
