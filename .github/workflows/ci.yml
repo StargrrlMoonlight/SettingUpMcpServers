@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Continuous Integration
 
 on:
   push:
@@ -95,9 +95,9 @@ jobs:
       uses: actions/upload-artifact@v4
       if: matrix.node-version == '20.x'
       with:
-        name: build-files
+        name: build-files-${{ github.sha }}
         path: dist/
-        retention-days: 7
+        retention-days: 30
 
   accessibility:
     name: Accessibility Tests
