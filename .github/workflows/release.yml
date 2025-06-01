@@ -68,19 +68,6 @@ jobs:
           cat CHANGELOG.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
           
-      - name: Create release archive
-        run: |
-          # Create a clean distribution package
-          mkdir -p release-package
-          cp -r dist/* release-package/
-          cp package.json release-package/
-          cp README.md release-package/
-          cp LICENSE* release-package/ 2>/dev/null || echo "No LICENSE file found"
-          
-          # Create archive
-          tar -czf todo-app-${GITHUB_REF_NAME}.tar.gz -C release-package .
-          zip -r todo-app-${GITHUB_REF_NAME}.zip release-package/
-          
       - name: Determine release version
         id: version
         run: |
@@ -91,6 +78,19 @@ jobs:
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Release version: $VERSION"
+          
+      - name: Create release archive
+        run: |
+          # Create a clean distribution package
+          mkdir -p release-package
+          cp -r dist/* release-package/
+          cp package.json release-package/
+          cp README.md release-package/
+          cp LICENSE* release-package/ 2>/dev/null || echo "No LICENSE file found"
+          
+          # Create archive using standardized version
+          tar -czf todo-app-${{ steps.version.outputs.version }}.tar.gz -C release-package .
+          zip -r todo-app-${{ steps.version.outputs.version }}.zip release-package/
           
       - name: Create GitHub Release
         uses: actions/create-release@v1
