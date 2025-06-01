@@ -45,9 +45,10 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
-      - name: Upload artifact
+      - name: Upload staging artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          name: github-pages-staging
           path: './dist'
           
       - name: Deploy to GitHub Pages (Staging)
@@ -114,9 +115,10 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
-      - name: Upload artifact
+      - name: Upload production artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          name: github-pages-production
           path: './dist'
           
       - name: Deploy to Production
