@@ -15,6 +15,11 @@ on:
         required: false
         type: boolean
         default: false
+      triggered_by_cd:
+        description: 'Triggered by CD workflow'
+        required: false
+        type: string
+        default: 'false'
 
 permissions:
   contents: write
@@ -24,6 +29,17 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     steps:
+      - name: Release workflow triggered
+        run: |
+          if [ "${{ github.event.inputs.triggered_by_cd }}" = "true" ]; then
+            echo "🔗 Release workflow triggered by Continuous Deployment"
+            echo "📦 Automatic release creation after successful production deployment"
+            echo "🎯 Version: ${{ github.event.inputs.version }}"
+          else
+            echo "🔧 Manual release workflow triggered"
+            echo "📦 Creating release: ${{ github.event.inputs.version || github.ref_name }}"
+          fi
+          
       - name: Checkout code
         uses: actions/checkout@v4
         with:
