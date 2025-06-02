@@ -315,8 +315,8 @@ jobs:
           cp LICENSE* release-package/ 2>/dev/null || echo "No LICENSE file found"
           
           # Create archive using standardized version
-          tar -czf todo-app-${{ needs.test-and-build.outputs.next-version }}.tar.gz -C release-package .
-          zip -r todo-app-${{ needs.test-and-build.outputs.next-version }}.zip release-package/
+          tar -czf ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.tar.gz -C release-package .
+          zip -r ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.zip release-package/
           
       - name: Create GitHub Release
         id: create_release
