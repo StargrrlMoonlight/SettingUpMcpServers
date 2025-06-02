@@ -88,9 +88,11 @@ This project uses separate Continuous Integration and Continuous Deployment work
 
 We welcome contributions! Please see our contribution guidelines to get started:
 
-- 🔄 **[Development Workflow](DEVELOPMENT.md)** - Complete development process and branch protection setup
+- 🔄 **[Development Workflow](WORKFLOW.md)** - Complete development process and GitHub Copilot integration
 - 📋 **[Contributing Guide](CONTRIBUTING.md)** - Complete guide for contributors
-- 🛠 **[Development Setup](docs/DEVELOPMENT_SETUP.md)** - Detailed setup instructions
+- 🛠 **[Development Setup](docs/SETUP.md)** - Detailed setup instructions
+- 🧪 **[Testing Guide](docs/TESTING.md)** - Testing framework and coverage requirements
+- 🚀 **[Deployment Guide](docs/DEPLOYMENT.md)** - CI/CD pipeline and release management
 - 📝 **[Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)** - PR guidelines
 
 ### Quick Start for Contributors
@@ -111,7 +113,7 @@ We follow **GitHub Flow** with issue-driven development:
 - Clean commit history with conventional commits
 - Branch protection with CI/CD quality gates
 
-📖 **See [DEVELOPMENT.md](DEVELOPMENT.md) for complete workflow details and branch protection setup**
+📖 **See [WORKFLOW.md](WORKFLOW.md) for complete workflow details and GitHub Copilot integration**
 
 ## 🎯 Current Roadmap
 

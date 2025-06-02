@@ -1,0 +1,46 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- Comprehensive documentation structure reorganization
+- Enhanced CI/CD pipeline with improved artifact management
+- GitHub Copilot integration for development workflow
+- Automated testing framework with coverage requirements
+
+### Changed
+- Reorganized documentation into specialized files for better maintainability
+- Improved CD workflow with clearer artifact naming for staging vs production
+- Enhanced development workflow with issue-driven development process
+
+### Removed
+- Duplicate content across documentation files
+- Temporary testing files
+
+## [1.0.0] - TBD
+
+### Added
+- Initial React Todo List application
+- Basic CRUD operations for todo items
+- Local storage persistence
+- Responsive design with modern UI
+- Comprehensive testing setup
+- CI/CD pipeline with GitHub Actions
+
+### Features
+- Add, edit, delete, and toggle todo items
+- Drag and drop reordering
+- Due dates and priority levels
+- Dark/light theme toggle
+- Auto-save functionality
+- Keyboard shortcuts
+- Accessible design
+
+---
+
+*This changelog is automatically updated as part of the release process. For detailed commit history, see the [GitHub repository](https://github.com/StargrrlMoonlight/SettingUpMcpServers).*

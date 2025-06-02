@@ -109,62 +109,20 @@ npm run test:ci          # Run tests in CI mode
 
 ## 🧪 Testing Framework
 
-This project uses a comprehensive testing framework to ensure code quality and prevent regressions.
+For comprehensive testing information, see **[TESTING.md](TESTING.md)**.
 
-### Testing Technology Stack
-- **Vitest**: Fast, Vite-native testing framework
-- **React Testing Library**: For testing React components
-- **JSDOM**: Browser environment simulation
-- **@testing-library/user-event**: For simulating user interactions
-- **Codecov**: Coverage reporting and visualization
-
-### Test Structure
-- **Unit Tests**: Located alongside source files (e.g., `Component.test.jsx`)
-- **Integration Tests**: Located in `src/test` directory
-- **Test Setup**: Global setup in `src/test/setup.js`
-- **Mocks**: Browser APIs mocked in setup file
-
-### Running Tests
+**Quick Reference:**
 ```bash
-# Run all tests
-npm run test
-
-# Run tests in watch mode (development)
-npm run test:watch
-
-# Run tests with coverage reporting
-npm run test:coverage
-
-# Run a specific test file
-npm run test -- TodoItem.test.jsx
+npm run test             # Run all tests
+npm run test:watch       # Run tests in watch mode  
+npm run test:coverage    # Run tests with coverage report
 ```
 
-### Coverage Requirements
-The project maintains a minimum of 80% code coverage across:
-- Statements
-- Branches
-- Functions
-- Lines
-
-Coverage reports are generated in the `coverage` directory and can be viewed by opening `coverage/index.html`.
-
-### CI/CD Integration
-Tests are automatically run on:
-- Pull request creation/updates
-- Pushes to main branch
-
-Failed tests block merging to maintain code quality.
-
-The CI/CD pipeline performs the following steps:
-1. **Linting**: ESLint checks code quality and style
-2. **Testing**: Runs all tests with coverage reporting
-3. **Coverage Check**: Verifies coverage meets thresholds (80%)
-4. **Build**: Builds the application to verify production readiness
-5. **Accessibility**: Runs axe-core checks on the built application
-
-The workflow runs on multiple Node.js versions (18.x and 20.x) to ensure cross-version compatibility.
-
-Code coverage reports are automatically published to Codecov, and a badge in the README shows the current coverage percentage.
+**Key Points:**
+- 80% minimum code coverage requirement
+- Vitest + React Testing Library stack
+- Automated CI/CD integration
+- Unit tests alongside source files
 
 ## 🔧 Development Workflow
 
@@ -292,16 +250,7 @@ git reset --hard upstream/main
 
 ## 🚀 Deployment
 
-### Production Build
-```bash
-npm run build
-npm run preview  # Test production build locally
-```
-
-### Deployment Platforms
-- **Vercel** - Automatic deployments from GitHub
-- **Netlify** - Static site hosting
-- **GitHub Pages** - Free hosting for public repos
+For detailed deployment information including production builds, CI/CD pipeline, and release management, see **[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
 ## 📚 Learning Resources
 
