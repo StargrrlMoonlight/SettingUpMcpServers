@@ -50,6 +50,47 @@ jobs:
     - name: Run ESLint
       run: npm run lint
       
+    - name: Validate conventional commits
+      if: github.event_name == 'pull_request'
+      run: |
+        # Check if PR commits follow conventional commit format
+        echo "🔍 Validating conventional commit format..."
+        
+        # Get list of commits in this PR
+        COMMITS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }}/commits" | \
+          jq -r '.[].commit.message' | head -n 1)
+        
+        # Define conventional commit pattern
+        PATTERN="^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?(!)?: .+"
+        
+        # Validate each commit message
+        INVALID_COMMITS=()
+        while IFS= read -r commit_msg; do
+          if [[ ! "$commit_msg" =~ $PATTERN ]]; then
+            INVALID_COMMITS+=("$commit_msg")
+          fi
+        done <<< "$COMMITS"
+        
+        # Report results
+        if [ ${#INVALID_COMMITS[@]} -eq 0 ]; then
+          echo "✅ All commits follow conventional commit format!"
+        else
+          echo "❌ Invalid commit messages found:"
+          printf '  - %s\n' "${INVALID_COMMITS[@]}"
+          echo ""
+          echo "📖 Conventional Commit Format:"
+          echo "  <type>[optional scope]: <description>"
+          echo ""
+          echo "🏷️ Valid types: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert"
+          echo "💡 Examples:"
+          echo "  - feat: add drag and drop functionality"
+          echo "  - fix: resolve save indicator timing issue"
+          echo "  - docs: update README with new examples"
+          echo "  - feat!: redesign todo data structure (breaking change)"
+          exit 1
+        fi
+      
     - name: Run tests with coverage
       run: npm run test:ci
       
