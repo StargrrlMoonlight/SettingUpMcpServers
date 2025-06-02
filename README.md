@@ -1,7 +1,6 @@
 # Executive Tasks - Elegant Todo List
 
-![CI Status](https://github.com/StargrrlMoonlight/SettingUpMcpServers/actions/workflows/ci.yml/badge.svg?branch=main)
-![CD Status](https://github.com/StargrrlMoonlight/SettingUpMcpServers/actions/workflows/cd.yml/badge.svg?branch=main)
+![Test & Deploy](https://github.com/StargrrlMoonlight/SettingUpMcpServers/actions/workflows/test-build-deploy.yml/badge.svg?branch=main)
 ![Coverage](https://img.shields.io/badge/coverage-82%25-success)
 [![code style: eslint](https://img.shields.io/badge/code%20style-eslint-blue.svg)](https://eslint.org/)
 
@@ -10,7 +9,6 @@ A sophisticated todo-list web application built with React and Vite, featuring a
 ## 🚀 Live Demo
 
 - **Production**: [https://stargrrlmoonlight.github.io/SettingUpMcpServers](https://stargrrlmoonlight.github.io/SettingUpMcpServers)
-- **Staging**: GitHub Actions environment validation (automatic)
 
 ## Features
 
@@ -38,29 +36,24 @@ The application follows a minimalist design approach with:
 - **CSS3** - Custom styling with CSS variables and modern techniques
 - **Google Fonts** - Crimson Text and Inter for elegant typography
 
-## 🔄 CI/CD Workflows
+## 🔄 Streamlined CI/CD Workflow
 
-This project uses separate Continuous Integration and Continuous Deployment workflows for better organization and security:
+This project uses a single, comprehensive workflow that handles all testing, building, and deployment automatically:
 
-### Continuous Integration (CI)
+### Test, Build & Deploy Workflow
 - **Triggers**: Every push and pull request to main branch
 - **Matrix Testing**: Tests on Node.js 18.x and 20.x
 - **Quality Gates**: ESLint linting, automated testing with coverage, accessibility testing
-- **Artifacts**: Build artifacts stored for 30 days with commit hash naming
-- **Coverage**: Automatic README badge updates with coverage percentage
-
-### Continuous Deployment (CD)
-- **Staging**: GitHub Actions environment validation with build artifact testing
-- **Production**: Automatic deployment to GitHub Pages after staging validation
-- **Health Checks**: Automated post-deployment verification for production
+- **GitHub Pages Deployment**: Automatic deployment after all tests pass
 - **Release Management**: Automatic semantic versioning and release creation
-- **Environments**: Staging (automatic validation) and production (GitHub Pages) with protection rules
+- **Coverage Updates**: Automatic README badge updates with coverage percentage
 
-### Release Management
-- **Automated Releases**: Created on version tags (v1.0.0 format)
-- **Manual Releases**: Triggered via workflow dispatch with custom versioning
-- **Changelog**: Auto-generated from commit messages
-- **Assets**: Release packages in both tar.gz and zip formats
+### Key Features
+- **Single Workflow**: Simplified pipeline that combines CI, build, and deployment
+- **Quality Assurance**: ESLint, testing, and accessibility checks before deployment
+- **Automated Releases**: Version tagging and GitHub releases with downloadable assets
+- **Branch Protection**: Required status checks ensure code quality
+- **GitHub Copilot Integration**: Automated code reviews for all pull requests
 
 ## Getting Started
 
