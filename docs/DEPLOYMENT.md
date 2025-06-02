@@ -2,53 +2,37 @@
 
 This document covers the deployment processes, artifact management, and release workflows for the React Todo List project.
 
-## 🚀 Deployment Pipeline
+## 🚀 Streamlined Deployment Pipeline
 
 ### Overview
 ```mermaid
 graph LR
-    A[CI Success] --> B[Build Artifacts]
-    B --> C[Deploy Staging]
-    C --> D[Staging Validation]
-    D --> E[Production Deployment]
-    E --> F[Trigger Release]
-    F --> G[Create GitHub Release]
-    G --> H[Downloadable Assets]
+    A[Test & Build Success] --> B[Build Application]
+    B --> C[Deploy to GitHub Pages]
+    C --> D[Create GitHub Release]
+    D --> E[Downloadable Assets Available]
 ```
 
-### Deployment Environments
+### Single Workflow Architecture
+The deployment process is now handled by a single comprehensive workflow (`test-build-deploy.yml`) that:
+- **Tests**: Runs all quality gates (ESLint, tests, accessibility)
+- **Builds**: Creates production-ready application
+- **Deploys**: Automatically deploys to GitHub Pages
+- **Releases**: Creates GitHub releases with version tagging
 
-**Staging Environment**
-- **URL**: GitHub Actions environment validation  
-- **Purpose**: Automatic artifact validation and testing
-- **Trigger**: Automatic after successful CI on main branch
-- **Artifact**: `staging-build`
-
-**Production Environment**
+### Production Environment
 - **URL**: [https://stargrrlmoonlight.github.io/SettingUpMcpServers](https://stargrrlmoonlight.github.io/SettingUpMcpServers)
 - **Purpose**: Live application deployment via GitHub Pages
-- **Trigger**: Automatic after successful staging validation
-- **Artifact**: `production-build`
-- **Action**: Deploys to GitHub Pages and triggers release creation
+- **Trigger**: Automatic after successful tests and build
+- **Health Check**: Automated verification of deployment success
 
-## 📦 Artifact Management
+## 📦 Build Artifacts
 
-### Build Artifacts
-
-**staging-build**
-- **Purpose**: Staging deployment on GitHub Pages
-- **Retention**: 1 day
-- **Contents**: Complete application build for staging validation
-
-**production-build**
-- **Purpose**: Production validation and release assets
-- **Retention**: 1 day
-- **Contents**: Production-ready application build
-
-**staging-pages**
-- **Purpose**: GitHub Pages specific deployment artifact
-- **Retention**: GitHub Pages managed
-- **Contents**: Optimized pages deployment package
+### Production Build
+The streamlined workflow creates a single production build that is:
+- **Built**: Using `npm run build` with Vite
+- **Deployed**: Directly to GitHub Pages
+- **Released**: As downloadable assets in GitHub releases
 
 ### Build Process
 ```bash
@@ -68,6 +52,11 @@ dist/
 └── vite.svg
 ```
 
+### Artifact Management
+- **GitHub Pages**: Automatic deployment artifact managed by GitHub
+- **Release Assets**: Build archives available for download from GitHub releases
+- **No Staging Artifacts**: Simplified workflow eliminates intermediate artifacts
+
 ## 🏗️ GitHub Pages Deployment
 
 ### Configuration
@@ -77,10 +66,10 @@ dist/
 - **HTTPS**: Enforced by GitHub Pages
 
 ### Deployment Process
-1. **Build Stage**: Creates application artifacts
-2. **Pages Setup**: Configures GitHub Pages environment
-3. **Artifact Upload**: Uploads `staging-pages` artifact
-4. **Pages Deploy**: Deploys to GitHub Pages infrastructure
+1. **Test Stage**: Runs ESLint, tests, and accessibility checks
+2. **Build Stage**: Creates production application build
+3. **Deploy Stage**: Deploys to GitHub Pages infrastructure  
+4. **Release Stage**: Creates GitHub release with version tagging
 5. **Health Check**: Validates deployment success
 
 ### Health Checks
@@ -97,8 +86,8 @@ curl -w "@curl-format.txt" -o /dev/null -s "https://stargrrlmoonlight.github.io/
 ### Automated Releases
 
 **Trigger Conditions**
-- Successful production deployment to GitHub Pages
-- Successful staging validation
+- Successful test and build completion
+- Successful GitHub Pages deployment
 - All CI/CD quality gates passed
 
 **Version Calculation**

@@ -2,18 +2,16 @@
 
 This document outlines the complete development workflow for solo developers working with GitHub Copilot as an automated code reviewer. This workflow ensures high code quality while maintaining the flexibility needed for independent development.
 
-## 🚀 Complete CI/CD Pipeline
+## 🚀 Streamlined CI/CD Pipeline
 
 ### Automated Workflow Overview
 ```mermaid
 graph LR
-    A[Code Merged to Main] --> B[CI: Tests & Quality Gates]
-    B --> C[CD: Build Application]
-    C --> D[CD: Staging Validation]
-    D --> E[CD: Deploy to Production]
-    E --> F[CD: Trigger Release Workflow]
-    F --> G[Release: Create GitHub Release]
-    G --> H[Download Assets Available]
+    A[Code Merged to Main] --> B[Test & Build: Quality Gates]
+    B --> C[Test & Build: Build Application]
+    C --> D[Test & Build: Deploy to GitHub Pages]
+    D --> E[Test & Build: Create Release]
+    E --> F[GitHub Release Available]
 ```
 
 ### 1. Issue-Driven Development
@@ -48,7 +46,7 @@ The `main` branch is protected with the following rules to maintain code quality
 - ✅ **Require approvals:** `0` (allows solo developer to merge their own PRs)
 - ✅ **Dismiss stale PR approvals when new commits are pushed**
 - ✅ **Require status checks to pass before merging:**
-  - `Continuous Integration` workflow must pass
+  - `Test & Build` workflow must pass
 - ✅ **Require branches to be up to date before merging**
 - ✅ **Require conversation resolution before merging**
 - ✅ **Do not allow bypassing the above settings**
@@ -74,29 +72,27 @@ The `main` branch is protected with the following rules to maintain code quality
 - **Best Practices**: Ensures adherence to coding standards
 - **Consistency**: Maintains consistent code style across the project
 
-## 🚀 CI/CD Pipeline
+## 🚀 Streamlined CI/CD Pipeline
 
-### Continuous Integration (CI)
+### Test, Build & Deploy Workflow
 - **Triggers**: On all pull requests and pushes to main
-- **Actions**: 
+- **Quality Gates**: 
   - Install dependencies
-  - Run linting and type checking
-  - Execute test suite
-  - Build application
-  - Store build artifacts (30-day retention)
+  - Run linting (ESLint) and type checking
+  - Execute test suite with coverage reporting
+  - Run accessibility tests
+- **Build & Deploy**:
+  - Build application for production
+  - Deploy to GitHub Pages automatically
+  - Create GitHub releases with version tagging
 - **Node.js Versions**: Tests against Node.js 18.x and 20.x
 
-### Continuous Deployment (CD)
-- **Staging**: Automatic artifact validation and environment preparation
-- **Production**: Automatic deployment to GitHub Pages after staging validation
-- **Health Checks**: Automated verification of deployment success
-- **Rollback**: Capability to rollback failed deployments
-
-### Release Management
-- **Automated Releases**: Triggered by version tags (`v*.*.*`)
-- **Manual Releases**: Workflow dispatch for ad-hoc releases
-- **Changelog Generation**: Automatic changelog from git commit history
-- **Release Assets**: Provides downloadable build archives
+### Benefits of Single Workflow
+- **Simplified Pipeline**: One workflow handles all CI/CD needs
+- **Faster Feedback**: No waiting between separate workflow stages
+- **Reduced Complexity**: Easier to maintain and debug
+- **Consistent Environment**: Same runner for all pipeline stages
+- **Cost Effective**: Fewer GitHub Actions minutes consumed
 
 ## 📝 Coding Guidelines
 
