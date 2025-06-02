@@ -123,10 +123,10 @@ jobs:
             NEW_VERSION="v1.0.0"
           else
             # Increment based on conventional commits
-            if git log ${LATEST_TAG}..HEAD --oneline | grep -q "BREAKING CHANGE\|feat!"; then
+            if git log ${LATEST_TAG}..HEAD --oneline | grep -q "BREAKING CHANGE\\|feat!"; then
               # Major version bump
               NEW_VERSION="v$((MAJOR + 1)).0.0"
-            elif git log ${LATEST_TAG}..HEAD --oneline | grep -q "feat\|feature"; then
+            elif git log ${LATEST_TAG}..HEAD --oneline | grep -q "feat\\|feature"; then
               # Minor version bump
               NEW_VERSION="v${MAJOR}.$((MINOR + 1)).0"
             else

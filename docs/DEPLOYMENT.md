@@ -183,7 +183,7 @@ BUILD_PATH=dist
 # GitHub Actions environment variables
 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 NODE_VERSION: "20.x"
-DEPLOYMENT_ENVIRONMENT: staging|production
+DEPLOYMENT_ENVIRONMENT: "staging|production"
 ```
 
 ## 🔒 Security Considerations
