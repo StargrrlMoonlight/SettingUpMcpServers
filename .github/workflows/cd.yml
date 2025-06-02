@@ -126,7 +126,9 @@ jobs:
       - name: Deploy to Production
         id: deployment
         uses: actions/deploy-pages@v4
-        
+        with:
+          artifact_name: "github-pages-production"
+   
       - name: Production Health Check
         run: |
           echo "Waiting for production deployment to be ready..."
