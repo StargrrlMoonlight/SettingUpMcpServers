@@ -10,7 +10,7 @@ A sophisticated todo-list web application built with React and Vite, featuring a
 ## 🚀 Live Demo
 
 - **Production**: [https://stargrrlmoonlight.github.io/SettingUpMcpServers](https://stargrrlmoonlight.github.io/SettingUpMcpServers)
-- **Staging**: Available after CI/CD pipeline completion
+- **Staging**: GitHub Actions environment validation (automatic)
 
 ## Features
 
@@ -50,11 +50,11 @@ This project uses separate Continuous Integration and Continuous Deployment work
 - **Coverage**: Automatic README badge updates with coverage percentage
 
 ### Continuous Deployment (CD)
-- **Staging**: Automatic deployment to GitHub Pages after successful CI
-- **Production**: Manual approval required for production deployment
-- **Health Checks**: Automated post-deployment verification
-- **Rollback**: Manual rollback capability (when needed)
-- **Environments**: Separate staging and production environments with protection rules
+- **Staging**: GitHub Actions environment validation with build artifact testing
+- **Production**: Automatic deployment to GitHub Pages after staging validation
+- **Health Checks**: Automated post-deployment verification for production
+- **Release Management**: Automatic semantic versioning and release creation
+- **Environments**: Staging (automatic validation) and production (GitHub Pages) with protection rules
 
 ### Release Management
 - **Automated Releases**: Created on version tags (v1.0.0 format)

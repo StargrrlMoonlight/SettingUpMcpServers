@@ -9,8 +9,8 @@ This document covers the deployment processes, artifact management, and release 
 graph LR
     A[CI Success] --> B[Build Artifacts]
     B --> C[Deploy Staging]
-    C --> D[Manual Approval]
-    D --> E[Production Validation]
+    C --> D[Staging Validation]
+    D --> E[Production Deployment]
     E --> F[Trigger Release]
     F --> G[Create GitHub Release]
     G --> H[Downloadable Assets]
@@ -19,16 +19,17 @@ graph LR
 ### Deployment Environments
 
 **Staging Environment**
-- **URL**: [https://stargrrlmoonlight.github.io/SettingUpMcpServers](https://stargrrlmoonlight.github.io/SettingUpMcpServers)
-- **Purpose**: Automatic deployment for testing and validation
+- **URL**: GitHub Actions environment validation  
+- **Purpose**: Automatic artifact validation and testing
 - **Trigger**: Automatic after successful CI on main branch
-- **Artifact**: `staging-build` + `staging-pages`
+- **Artifact**: `staging-build`
 
 **Production Environment**
-- **Purpose**: Manual approval gate and release preparation
-- **Trigger**: Manual approval after staging deployment
+- **URL**: [https://stargrrlmoonlight.github.io/SettingUpMcpServers](https://stargrrlmoonlight.github.io/SettingUpMcpServers)
+- **Purpose**: Live application deployment via GitHub Pages
+- **Trigger**: Automatic after successful staging validation
 - **Artifact**: `production-build`
-- **Action**: Triggers automatic release creation
+- **Action**: Deploys to GitHub Pages and triggers release creation
 
 ## 📦 Artifact Management
 
@@ -96,7 +97,7 @@ curl -w "@curl-format.txt" -o /dev/null -s "https://stargrrlmoonlight.github.io/
 ### Automated Releases
 
 **Trigger Conditions**
-- Production deployment approval
+- Successful production deployment to GitHub Pages
 - Successful staging validation
 - All CI/CD quality gates passed
 
