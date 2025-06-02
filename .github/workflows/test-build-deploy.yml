@@ -95,7 +95,7 @@ jobs:
         BADGE_URL="https://img.shields.io/badge/coverage-$COVERAGE%25-$COLOR"
         
         # Update README.md with the new badge
-        sed -i -E "s|!\[Coverage\]\(https://img.shields.io/badge/coverage-[0-9]+%25-[a-zA-Z]+\)|![Coverage]($BADGE_URL)|g" README.md
+        sed -i -E "s|!\[Coverage\]\(https://img.shields.io/badge/coverage-[0-9]+(\.[0-9]+)?%25-[a-zA-Z]+\)|![Coverage]($BADGE_URL)|g" README.md
         
     - name: Commit updated README with coverage badge
       if: matrix.node-version == '20.x' && github.ref == 'refs/heads/main' && github.event_name == 'push'
