@@ -371,7 +371,7 @@ jobs:
       - name: Notify release completion
         run: |
           echo "🎉 Release ${{ needs.test-and-build.outputs.next-version }} created successfully!"
-          echo "📦 Release URL: ${{ steps.create_release.outputs.html_url }}"
+          echo "📦 Release URL: ${{ steps.create_release.outputs.url }}"
           echo "📊 Test Coverage: ${{ needs.test-and-build.outputs.coverage }}%"
           echo "🚀 Live Demo: https://stargrrlmoonlight.github.io/SettingUpMcpServers"
           echo "⬇️ Download assets:"
