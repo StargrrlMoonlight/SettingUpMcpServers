@@ -186,4 +186,3 @@ jobs:
           echo "🔄 Rollback procedure would be implemented here"
           echo "This is a placeholder for rollback functionality"
           echo "In a real scenario, this would restore the previous stable version"
-          
