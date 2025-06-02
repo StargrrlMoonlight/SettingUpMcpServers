@@ -9,8 +9,8 @@ This document outlines the complete development workflow for solo developers wor
 graph LR
     A[Code Merged to Main] --> B[CI: Tests & Quality Gates]
     B --> C[CD: Build Application]
-    C --> D[CD: Deploy to Staging]
-    D --> E[CD: Production Approval Gate]
+    C --> D[CD: Staging Validation]
+    D --> E[CD: Deploy to Production]
     E --> F[CD: Trigger Release Workflow]
     F --> G[Release: Create GitHub Release]
     G --> H[Download Assets Available]
@@ -87,8 +87,8 @@ The `main` branch is protected with the following rules to maintain code quality
 - **Node.js Versions**: Tests against Node.js 18.x and 20.x
 
 ### Continuous Deployment (CD)
-- **Staging**: Automatic deployment to GitHub Pages staging environment
-- **Production**: Manual approval required for production deployment
+- **Staging**: Automatic artifact validation and environment preparation
+- **Production**: Automatic deployment to GitHub Pages after staging validation
 - **Health Checks**: Automated verification of deployment success
 - **Rollback**: Capability to rollback failed deployments
 
