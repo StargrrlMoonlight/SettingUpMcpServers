@@ -1,8 +1,20 @@
-# Development Workflow Guide
+# Solo Developer Workflow with GitHub Copilot
 
-This document outlines the development workflow for the React Todo-List application, designed for solo developers working with GitHub Copilot as an automated code reviewer.
+This document outlines the complete development workflow for solo developers working with GitHub Copilot as an automated code reviewer. This workflow ensures high code quality while maintaining the flexibility needed for independent development.
 
-## 🔄 Development Process
+## 🚀 Complete CI/CD Pipeline
+
+### Automated Workflow Overview
+```mermaid
+graph LR
+    A[Code Merged to Main] --> B[CI: Tests & Quality Gates]
+    B --> C[CD: Build Application]
+    C --> D[CD: Deploy to Staging]
+    D --> E[CD: Production Approval Gate]
+    E --> F[CD: Trigger Release Workflow]
+    F --> G[Release: Create GitHub Release]
+    G --> H[Download Assets Available]
+```
 
 ### 1. Issue-Driven Development
 - **Always create a GitHub issue first** before starting any new feature or bug fix
