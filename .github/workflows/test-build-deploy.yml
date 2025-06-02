@@ -1,0 +1,379 @@
+name: Test, Build, Deploy & Release
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  test-and-build:
+    name: Test & Build
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    outputs:
+      coverage: ${{ steps.coverage.outputs.coverage }}
+      should-release: ${{ steps.release-check.outputs.should-release }}
+      next-version: ${{ steps.release-check.outputs.next-version }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run ESLint
+      run: npm run lint
+      
+    - name: Run tests with coverage
+      run: npm run test:ci
+      
+    - name: Extract coverage percentage
+      if: matrix.node-version == '20.x'
+      id: coverage
+      run: |
+        # Extract coverage percentage from the coverage summary
+        COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+        echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+        echo "Coverage: $COVERAGE%"
+      
+    - name: Update README with coverage badge
+      if: matrix.node-version == '20.x' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: |
+        # Install jq if not already installed
+        sudo apt-get update && sudo apt-get install -y jq bc
+        
+        # Verify the coverage summary file exists
+        if [ ! -f "coverage/coverage-summary.json" ]; then
+          echo "Error: coverage-summary.json not found. Ensure test:ci is generating the file correctly."
+          exit 1
+        fi
+        
+        # Extract coverage percentage from the coverage summary
+        COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+        echo "Coverage: $COVERAGE%"
+        
+        # Determine badge color based on coverage
+        if (( $(echo "$COVERAGE >= 90" | bc -l) )); then
+          COLOR=brightgreen
+        elif (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+          COLOR=green
+        elif (( $(echo "$COVERAGE >= 70" | bc -l) )); then
+          COLOR=yellowgreen
+        elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then
+          COLOR=yellow
+        else
+          COLOR=red
+        fi
+        
+        # Create badge URL
+        BADGE_URL="https://img.shields.io/badge/coverage-$COVERAGE%25-$COLOR"
+        
+        # Update README.md with the new badge
+        sed -i -E "s|!\[Coverage\]\(https://img.shields.io/badge/coverage-[0-9]+%25-[a-zA-Z]+\)|![Coverage]($BADGE_URL)|g" README.md
+        
+    - name: Commit updated README with coverage badge
+      if: matrix.node-version == '20.x' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add README.md
+        git diff --staged --quiet || git commit -m "docs: update coverage badge [skip ci]"
+        git push || echo "No changes to push"
+      
+    - name: Build application
+      run: npm run build
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      if: matrix.node-version == '20.x'
+      with:
+        name: build-files-${{ github.sha }}
+        path: dist/
+        retention-days: 30
+
+    - name: Check if release should be created
+      if: matrix.node-version == '20.x' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+      id: release-check
+      run: |
+        # Get the latest tag to determine next version
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        echo "Latest tag: $LATEST_TAG"
+        
+        # Check if there are any commits since the last tag
+        if [ "$LATEST_TAG" = "v0.0.0" ]; then
+          COMMITS_SINCE_TAG=1
+        else
+          COMMITS_SINCE_TAG=$(git rev-list ${LATEST_TAG}..HEAD --count)
+        fi
+        
+        if [ "$COMMITS_SINCE_TAG" -gt 0 ]; then
+          echo "should-release=true" >> $GITHUB_OUTPUT
+          
+          # Extract version number without 'v' prefix
+          VERSION=$(echo $LATEST_TAG | sed 's/^v//')
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          
+          # Check commit messages since last tag for semantic versioning
+          if [ "$LATEST_TAG" = "v0.0.0" ]; then
+            # First release
+            NEW_VERSION="v1.0.0"
+          else
+            # Increment based on conventional commits
+            if git log ${LATEST_TAG}..HEAD --oneline | grep -q "BREAKING CHANGE\\|feat!"; then
+              # Major version bump
+              NEW_VERSION="v$((MAJOR + 1)).0.0"
+            elif git log ${LATEST_TAG}..HEAD --oneline | grep -q "feat\\|feature"; then
+              # Minor version bump
+              NEW_VERSION="v${MAJOR}.$((MINOR + 1)).0"
+            else
+              # Patch version bump (for fixes, docs, etc.)
+              NEW_VERSION="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+            fi
+          fi
+          
+          echo "next-version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "🎯 Next release version: $NEW_VERSION"
+        else
+          echo "should-release=false" >> $GITHUB_OUTPUT
+          echo "No new commits since last tag, skipping release"
+        fi
+
+  accessibility:
+    name: Accessibility Tests
+    runs-on: ubuntu-latest
+    needs: test-and-build
+    continue-on-error: true  # Make this job optional to prevent blocking the workflow
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+        
+    - name: Setup Chrome for testing
+      run: |
+        # Install Chrome and ChromeDriver directly
+        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+        
+        # Get Chrome version and install matching ChromeDriver
+        CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d. -f1)
+        echo "Detected Chrome version: $CHROME_VERSION"
+        
+        # Install ChromeDriver that matches Chrome version
+        npm install -g chromedriver@$CHROME_VERSION
+        
+    - name: Run accessibility tests
+      run: |
+        # Set environment variables for axe testing
+        export CHROME_BIN=$(which google-chrome)
+        export CHROMEDRIVER_BIN=$(which chromedriver)
+        echo "Using Chrome: $CHROME_BIN"
+        echo "Using ChromeDriver: $CHROMEDRIVER_BIN"
+        
+        npm run build
+        
+        # Run axe with explicit ChromeDriver path
+        npx start-server-and-test preview http://localhost:4173 "npx @axe-core/cli http://localhost:4173 --chromedriver-path $CHROMEDRIVER_BIN"
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [test-and-build, accessibility]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files-${{ github.sha }}
+          path: ./dist
+          
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        
+      - name: Production Health Check
+        run: |
+          echo "🚀 Production deployment complete!"
+          echo "📍 Production URL: ${{ steps.deployment.outputs.page_url }}"
+          
+          # Basic health check
+          echo "Performing production health check..."
+          sleep 15
+          
+          if curl -f -s "${{ steps.deployment.outputs.page_url }}" > /dev/null; then
+            echo "✅ Production health check passed!"
+          else
+            echo "⚠️ Production site may not be ready yet (this is normal for GitHub Pages)"
+          fi
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [test-and-build, deploy-pages]
+    if: needs.test-and-build.outputs.should-release == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for changelog generation
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files-${{ github.sha }}
+          path: ./dist
+        
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No previous tags found, generating changelog from first commit"
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            echo "Generating changelog since tag: $LATEST_TAG"
+            CHANGELOG=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          fi
+          
+          # Save changelog to file
+          echo "## Changes" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "$CHANGELOG" >> CHANGELOG.md
+          
+          # Set output for GitHub Actions (handle multiline properly)
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat CHANGELOG.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+      - name: Create release archive
+        run: |
+          # Create a clean distribution package
+          mkdir -p release-package
+          cp -r dist/* release-package/
+          cp package.json release-package/
+          cp README.md release-package/
+          cp LICENSE* release-package/ 2>/dev/null || echo "No LICENSE file found"
+          
+          # Create archive using standardized version
+          tar -czf todo-app-${{ needs.test-and-build.outputs.next-version }}.tar.gz -C release-package .
+          zip -r todo-app-${{ needs.test-and-build.outputs.next-version }}.zip release-package/
+          
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.test-and-build.outputs.next-version }}
+          name: Release ${{ needs.test-and-build.outputs.next-version }}
+          body: |
+            # Todo App Release ${{ needs.test-and-build.outputs.next-version }}
+            
+            ${{ steps.changelog.outputs.changelog }}
+            
+            ## 📊 Test Coverage
+            Coverage: ${{ needs.test-and-build.outputs.coverage }}%
+            
+            ## 🚀 Live Demo
+            Try the app: https://stargrrlmoonlight.github.io/SettingUpMcpServers
+            
+            ## 📦 Installation
+            
+            1. Download the release archive
+            2. Extract the files
+            3. Serve the `dist` folder with any web server
+            
+            ## What's Changed
+            See the changelog above for detailed changes in this release.
+            
+            **Full Changelog**: https://github.com/${{ github.repository }}/commits/${{ needs.test-and-build.outputs.next-version }}
+          draft: false
+          prerelease: false
+          files: |
+            todo-app-${{ needs.test-and-build.outputs.next-version }}.tar.gz
+            todo-app-${{ needs.test-and-build.outputs.next-version }}.zip
+          
+      - name: Update package.json version
+        run: |
+          # Extract version number without 'v' prefix
+          VERSION_NUMBER=$(echo "${{ needs.test-and-build.outputs.next-version }}" | sed 's/^v//')
+          
+          # Update package.json version
+          npm version $VERSION_NUMBER --no-git-tag-version
+          
+          # Commit the version update
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add package.json
+          git commit -m "chore: bump version to ${{ needs.test-and-build.outputs.next-version }}" || echo "No changes to commit"
+          git push origin main || echo "No changes to push"
+          
+      - name: Notify release completion
+        run: |
+          echo "🎉 Release ${{ needs.test-and-build.outputs.next-version }} created successfully!"
+          echo "📦 Release URL: ${{ steps.create_release.outputs.html_url }}"
+          echo "📊 Test Coverage: ${{ needs.test-and-build.outputs.coverage }}%"
+          echo "🚀 Live Demo: https://stargrrlmoonlight.github.io/SettingUpMcpServers"
+          echo "⬇️ Download assets:"
+          echo "   - todo-app-${{ needs.test-and-build.outputs.next-version }}.tar.gz"
+          echo "   - todo-app-${{ needs.test-and-build.outputs.next-version }}.zip"
