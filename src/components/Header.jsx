@@ -26,7 +26,7 @@ function Header() {
     <header className="header">
       <div className="header-content">
         <div>
-          <h1 className="header-title">Executive Tasks</h1>
+          <h1 className="header-title">Executive Manager</h1>
           <p className="header-subtitle">Streamline your productivity with elegance</p>
         </div>
         <button
