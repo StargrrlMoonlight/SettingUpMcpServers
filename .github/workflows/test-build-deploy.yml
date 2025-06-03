@@ -158,23 +158,19 @@ jobs:
             echo "🔍 Analyzing commits since $LATEST_TAG:"
             echo "$COMMIT_MESSAGES"
             
-            # Permissive version bumping - accommodate all commit styles
-            if echo "$COMMIT_MESSAGES" | grep -qE "(BREAKING CHANGE|feat!|fix!|[a-z]+!)"; then
-              # Major version bump for breaking changes
+            # Version bumping with proper precedence - breaking changes always win
+            if echo "$COMMIT_MESSAGES" | grep -qiE "(BREAKING CHANGE|breaking change)"; then
+              # Major version bump for breaking changes (highest precedence)
               NEW_VERSION="v$((MAJOR + 1)).0.0"
               echo "📈 Major version bump detected (breaking change)"
-            elif echo "$COMMIT_MESSAGES" | grep -qE "(feat(\(.*\))?:|🚀|✨|🎉|🆕)"; then
-              # Minor version bump for features (conventional + emojis)
-              NEW_VERSION="v${MAJOR}.$((MINOR + 1)).0"
-              echo "🆕 Minor version bump detected (feature or major enhancement)"
-            elif echo "$COMMIT_MESSAGES" | grep -qE "(fix(\(.*\))?:|🐛|🔧|⚡|♻️|💚|🔥)"; then
-              # Patch version bump for fixes and improvements
+            elif echo "$COMMIT_MESSAGES" | grep -qiE "(fix|patch)"; then
+              # Patch version bump for fixes (only if no breaking changes)
               NEW_VERSION="v${MAJOR}.${MINOR}.$((PATCH + 1))"
-              echo "🔧 Patch version bump detected (fix or improvement)"
+              echo "🔧 Patch version bump detected (fix or patch)"
             else
-              # Default to minor version for any other commits (permissive approach)
+              # Default to minor version for all other commits (lowest precedence)
               NEW_VERSION="v${MAJOR}.$((MINOR + 1)).0"
-              echo "📦 Minor version bump (default for non-conventional commits)"
+              echo "📦 Minor version bump (default for all other commits)"
             fi
           fi
           
