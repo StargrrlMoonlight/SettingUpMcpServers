@@ -54,7 +54,7 @@ jobs:
     - name: Validate conventional commits
       if: github.event_name == 'pull_request'
       run: |
-        # Check if PR commits follow conventional commit format
+        # Check if PR commits follow strict conventional commit format
         echo "🔍 Validating conventional commit format..."
         
         # Get list of commits in this PR
@@ -62,12 +62,17 @@ jobs:
           "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }}/commits" | \
           jq -r '.[].commit.message' | head -n 1)
         
-        # Define conventional commit pattern
+        # Define strict conventional commit pattern (NO emojis allowed)
         PATTERN="^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?(!)?: .+"
         
         # Validate each commit message
         INVALID_COMMITS=()
         while IFS= read -r commit_msg; do
+          # Skip merge commits and bot commits
+          if [[ "$commit_msg" =~ ^Merge\ (pull\ request|branch) ]] || [[ "$commit_msg" =~ ^\[skip\ ci\] ]]; then
+            continue
+          fi
+          
           if [[ ! "$commit_msg" =~ $PATTERN ]]; then
             INVALID_COMMITS+=("$commit_msg")
           fi
@@ -75,20 +80,23 @@ jobs:
         
         # Report results
         if [ ${#INVALID_COMMITS[@]} -eq 0 ]; then
-          echo "✅ All commits follow conventional commit format!"
+          echo "✅ All commits follow strict conventional commit format!"
         else
           echo "❌ Invalid commit messages found:"
           printf '  - %s\n' "${INVALID_COMMITS[@]}"
           echo ""
-          echo "📖 Conventional Commit Format:"
+          echo "📖 Strict Conventional Commit Format Required:"
           echo "  <type>[optional scope]: <description>"
           echo ""
           echo "🏷️ Valid types: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert"
+          echo "🚫 NO emojis allowed in commit messages"
           echo "💡 Examples:"
           echo "  - feat: add drag and drop functionality"
           echo "  - fix: resolve save indicator timing issue"
           echo "  - docs: update README with new examples"
           echo "  - feat!: redesign todo data structure (breaking change)"
+          echo ""
+          echo "🔧 To fix: Use 'git commit --amend -m \"new message\"' or interactive rebase"
           exit 1
         fi
       
@@ -179,6 +187,8 @@ jobs:
           COMMITS_SINCE_TAG=$(git rev-list ${LATEST_TAG}..HEAD --count)
         fi
         
+        echo "Commits since last tag: $COMMITS_SINCE_TAG"
+        
         if [ "$COMMITS_SINCE_TAG" -gt 0 ]; then
           echo "should-release=true" >> $GITHUB_OUTPUT
           
@@ -190,15 +200,35 @@ jobs:
           if [ "$LATEST_TAG" = "v0.0.0" ]; then
             # First release
             NEW_VERSION="v1.0.0"
+            echo "🎉 First release detected"
           else
-            # Increment based on conventional commits
-            if git log ${LATEST_TAG}..HEAD --oneline | grep -q "BREAKING CHANGE\\|feat!"; then
-              # Major version bump
+            # Get commit messages for analysis (with debug output)
+            COMMIT_MESSAGES=$(git log ${LATEST_TAG}..HEAD --oneline)
+            echo "🔍 Analyzing commits since $LATEST_TAG:"
+            echo "$COMMIT_MESSAGES"
+            
+            # Increment based on conventional commits (strict patterns)
+            if echo "$COMMIT_MESSAGES" | grep -qE "(BREAKING CHANGE|feat!|fix!|[a-z]+!)"; then
+              # Major version bump for breaking changes
               NEW_VERSION="v$((MAJOR + 1)).0.0"
-            elif git log ${LATEST_TAG}..HEAD --oneline | grep -q "feat\\|feature"; then
-              # Minor version bump
+              echo "📈 Major version bump detected (breaking change)"
+            elif echo "$COMMIT_MESSAGES" | grep -qE "feat(\(.*\))?: "; then
+              # Minor version bump for features
               NEW_VERSION="v${MAJOR}.$((MINOR + 1)).0"
+              echo "🆕 Minor version bump detected (feature)"
             else
+              # Patch version bump (for fixes, docs, etc.)
+              NEW_VERSION="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+              echo "🔧 Patch version bump detected (fix/docs/chore)"
+            fi
+          fi
+          
+          echo "next-version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "🎯 Next release version: $NEW_VERSION"
+        else
+          echo "should-release=false" >> $GITHUB_OUTPUT
+          echo "No new commits since last tag, skipping release"
+        fi
               # Patch version bump (for fixes, docs, etc.)
               NEW_VERSION="v${MAJOR}.${MINOR}.$((PATCH + 1))"
             fi

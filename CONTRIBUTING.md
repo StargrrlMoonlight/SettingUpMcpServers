@@ -229,28 +229,60 @@ npm run lint:fix
 npm run format
 ```
 
-## 🔄 Git Commit Guidelines
+## 📝 Commit Standards
 
-We follow conventional commits:
+### Conventional Commits (STRICT)
+All commits **MUST** follow the [Conventional Commits](https://www.conventionalcommits.org/) specification **without emojis**:
 
+#### Format
 ```
-type(scope): description
+<type>[optional scope]: <description>
 
-feat: add new feature
-fix: bug fix
-docs: documentation changes
-style: formatting changes
-refactor: code refactoring
-test: adding tests
-chore: maintenance tasks
+[optional body]
+
+[optional footer(s)]
 ```
 
-Examples:
+#### Types
+- **feat**: A new feature
+- **fix**: A bug fix
+- **docs**: Documentation changes
+- **style**: Code style changes (formatting, missing semi colons, etc)
+- **refactor**: Code refactoring without functional changes
+- **test**: Adding or updating tests
+- **chore**: Build process or auxiliary tool changes
+- **perf**: Performance improvements
+- **ci**: CI/CD configuration changes
+- **build**: Build system changes
+- **revert**: Reverting previous commits
+
+#### Examples
+```bash
+# ✅ GOOD - Clean conventional commits
+feat: add drag and drop functionality
+fix: resolve save indicator timing issue
+docs: update README with deployment instructions
+feat!: redesign todo data structure
+
+# ❌ BAD - Emoji prefixes not allowed
+✨ feat: add dark mode support
+🐛 fix: resolve timing issue
+📝 docs: update README
+✨ Update app title to "Executive Manager"
 ```
-feat(todo): add drag and drop reordering
-fix(ui): resolve mobile touch targets
-docs(readme): update installation instructions
+
+#### Breaking Changes
+Use `!` after the type/scope to indicate breaking changes:
+```bash
+feat!: remove legacy API endpoints
+fix(api)!: change response format
 ```
+
+### Commit Process
+1. **Stage your changes**: `git add .`
+2. **Write conventional commit**: `git commit -m "feat: add new feature"`
+3. **Validate locally**: Our pre-commit hooks will validate your commit message
+4. **Push to feature branch**: `git push origin feature/your-branch`
 
 ## 🤝 Getting Help
 
