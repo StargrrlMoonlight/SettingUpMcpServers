@@ -20,7 +20,7 @@ describe('Header Component', () => {
         )
 
         expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
-        expect(screen.getByText(/executive tasks/i)).toBeInTheDocument()
+        expect(screen.getByText(/executive manager/i)).toBeInTheDocument()
     })
 
     it('renders theme toggle button', () => {
