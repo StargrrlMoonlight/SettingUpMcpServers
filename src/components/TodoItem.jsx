@@ -7,7 +7,7 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }) {
 
   const handleSave = () => {
     if (editText.trim()) {
-      onEdit(todo.id, editText.trim())
+      onEdit(todo.id, { text: editText.trim() })
       setIsEditing(false)
     }
   }
@@ -26,7 +26,7 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }) {
   }
 
   return (
-    <div className={`todo-item ${todo.completed ? 'completed' : ''}`}>
+    <div className={`todo-item ${todo.completed ? 'completed' : ''}`} data-priority={todo.priority || 'medium'}>
       <div className="todo-content">
         <button
           className="checkbox"
@@ -50,13 +50,27 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }) {
             />
           </>
         ) : (
-          <span
-            className="todo-text"
-            onClick={() => onToggle(todo.id)}
-            onDoubleClick={() => setIsEditing(true)}
-          >
-            {todo.text}
-          </span>
+          <div className="todo-info">
+            <span
+              className="todo-text"
+              onClick={() => onToggle(todo.id)}
+              onDoubleClick={() => setIsEditing(true)}
+            >
+              {todo.text}
+            </span>
+            <div className="todo-meta">
+              {todo.priority && (
+                <span className={`priority-badge priority-${todo.priority}`}>
+                  {todo.priority}
+                </span>
+              )}
+              {todo.dueDate && (
+                <span className="due-date">
+                  Due: {new Date(todo.dueDate).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          </div>
         )}
       </div>
 

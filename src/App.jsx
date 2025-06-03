@@ -24,12 +24,24 @@ function App() {
 
   // Default todos for new users or when localStorage is empty
   const defaultTodos = [
-    { id: 1, text: 'Review quarterly reports', completed: false },
-    { id: 2, text: 'Schedule client meeting', completed: true },
-    { id: 3, text: 'Update project documentation', completed: false },
+    { id: 1, text: 'Review quarterly reports', completed: false, priority: 'high', dueDate: null },
+    { id: 2, text: 'Schedule client meeting', completed: true, priority: 'medium', dueDate: null },
+    { id: 3, text: 'Update project documentation', completed: false, priority: 'low', dueDate: null },
   ]
 
+  // Migration helper to ensure todos have the new fields
+  const migrateTodos = (todos) => {
+    return todos.map(todo => ({
+      ...todo,
+      priority: todo.priority || 'medium',
+      dueDate: todo.dueDate || null
+    }))
+  }
+
   const [todos, setTodos] = useLocalStorage(STORAGE_KEYS.TODOS, defaultTodos, handleSave)
+
+  // Apply migration when todos are loaded
+  const migratedTodos = migrateTodos(todos)
 
   // Apply theme to document body
   useEffect(() => {
@@ -48,29 +60,31 @@ function App() {
     })
   }
 
-  const addTodo = (text) => {
+  const addTodo = (text, priority = 'medium', dueDate = null) => {
     // Generate a more unique ID using timestamp + random component
     const newTodo = {
       id: Date.now() + Math.random(),
       text,
-      completed: false
+      completed: false,
+      priority,
+      dueDate
     }
-    setTodos([...todos, newTodo])
+    setTodos([...migratedTodos, newTodo])
   }
 
   const toggleTodo = (id) => {
-    setTodos(todos.map(todo =>
+    setTodos(migratedTodos.map(todo =>
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     ))
   }
 
   const deleteTodo = (id) => {
-    setTodos(todos.filter(todo => todo.id !== id))
+    setTodos(migratedTodos.filter(todo => todo.id !== id))
   }
 
-  const editTodo = (id, newText) => {
-    setTodos(todos.map(todo =>
-      todo.id === id ? { ...todo, text: newText } : todo
+  const editTodo = (id, updates) => {
+    setTodos(migratedTodos.map(todo =>
+      todo.id === id ? { ...todo, ...updates } : todo
     ))
   }
 
@@ -80,7 +94,7 @@ function App() {
       clearAllData,
       exportData,
       importData,
-      getCurrentTodos: () => todos,
+      getCurrentTodos: () => migratedTodos,
       help: () => {
         console.log(`
 🔧 Executive Tasks Development Utilities:
@@ -106,7 +120,7 @@ Example usage:
         <div className="container">
           <Header />
           <TodoList
-            todos={todos}
+            todos={migratedTodos}
             onAddTodo={addTodo}
             onToggleTodo={toggleTodo}
             onDeleteTodo={deleteTodo}

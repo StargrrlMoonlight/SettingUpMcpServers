@@ -84,7 +84,7 @@ describe('TodoItem Component', () => {
         const saveButton = screen.getByRole('button', { name: /save/i })
         await user.click(saveButton)
 
-        expect(defaultProps.onEdit).toHaveBeenCalledWith(mockTodo.id, 'Updated todo text')
+        expect(defaultProps.onEdit).toHaveBeenCalledWith(mockTodo.id, { text: 'Updated todo text' })
     })
 
     it('cancels edit mode without calling onEdit when cancel is clicked', async () => {
@@ -116,7 +116,7 @@ describe('TodoItem Component', () => {
         await user.clear(input)
         await user.type(input, 'Updated via Enter{Enter}')
 
-        expect(defaultProps.onEdit).toHaveBeenCalledWith(mockTodo.id, 'Updated via Enter')
+        expect(defaultProps.onEdit).toHaveBeenCalledWith(mockTodo.id, { text: 'Updated via Enter' })
     })
 
     it('cancels edit when Escape key is pressed', async () => {
@@ -165,6 +165,6 @@ describe('TodoItem Component', () => {
         const saveButton = screen.getByRole('button', { name: /save/i })
         await user.click(saveButton)
 
-        expect(defaultProps.onEdit).toHaveBeenCalledWith(mockTodo.id, 'Updated todo text')
+        expect(defaultProps.onEdit).toHaveBeenCalledWith(mockTodo.id, { text: 'Updated todo text' })
     })
 })
