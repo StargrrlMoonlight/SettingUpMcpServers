@@ -15,6 +15,9 @@ A sophisticated task management web application built with React and Vite, featu
 - ✨ **Elegant Design**: Neutral light color palette with sophisticated typography
 - 📱 **Responsive**: Mobile-first design that works beautifully on all devices
 - 🎯 **Task Management**: Add, edit, complete, and delete tasks
+- 📅 **Due Dates**: Set and track due dates with overdue detection and styling
+- ⭐ **Priority Levels**: Organize tasks by High, Medium, or Low priority with visual badges
+- 🔄 **Smart Sorting**: Sort tasks by priority, due date, alphabetical order, or creation date
 - 🔍 **Filtering**: View all tasks, active tasks, or completed tasks
 - 💾 **Data Persistence**: Tasks are automatically saved to localStorage
 - 💫 **Smooth Animations**: Subtle transitions and hover effects
@@ -110,8 +113,10 @@ We follow **GitHub Flow** with issue-driven development:
 
 ## 🎯 Current Roadmap
 
+### Recently Completed
+- ✅ **Due Dates & Priority Levels** - Help users manage time and focus with visual indicators and overdue detection
+
 ### Priority Features
-- 📅 **Due Dates & Priority Levels** - Help users manage time and focus
 - 🏷️ **Categories & Tags** - Organize tasks by project or context  
 - 🎯 **Drag & Drop Reordering** - Visual task prioritization
 
@@ -153,7 +158,36 @@ Your tasks are automatically saved to your browser's localStorage, meaning they'
 - **Automatic saving**: All changes are saved immediately
 - **Visual feedback**: A subtle "Saved" indicator appears when data is stored
 - **Data recovery**: Your tasks will be restored when you return to the app
+- **Backward compatibility**: Existing tasks are automatically migrated to support new features
 - **Development utilities**: Use browser console commands for data management
+
+## Task Management Features
+
+### Priority Levels
+Tasks can be assigned three priority levels with visual indicators:
+- **High Priority** (Red badge): Critical tasks that need immediate attention
+- **Medium Priority** (Yellow badge): Standard tasks with normal importance
+- **Low Priority** (Green badge): Tasks that can be completed when time allows
+
+### Due Dates & Overdue Detection
+- Set specific due dates when creating or editing tasks
+- Visual due date display shows the formatted date
+- **Overdue Detection**: Tasks past their due date automatically display "Overdue" indicators with red styling and subtle animations
+- Sort tasks by due date to prioritize upcoming deadlines
+
+### Smart Sorting Options
+Organize your tasks with multiple sorting options:
+- **Priority**: High → Medium → Low priority order
+- **Due Date**: Earliest due dates first (tasks without dates appear last)
+- **Alphabetical**: A-Z sorting by task text
+- **Created**: Newest tasks first (default)
+
+### Enhanced Editing
+Double-click any task to edit:
+- Update task text
+- Change priority level
+- Modify due date
+- All changes save automatically
 
 ### Development Console Utilities
 
