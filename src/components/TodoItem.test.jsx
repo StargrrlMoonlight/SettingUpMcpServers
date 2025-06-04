@@ -7,7 +7,9 @@ describe('TodoItem Component', () => {
     const mockTodo = {
         id: 1,
         text: 'Test todo',
-        completed: false
+        completed: false,
+        priority: 'medium',
+        dueDate: '2024-12-31'
     }
 
     const defaultProps = {
@@ -28,6 +30,31 @@ describe('TodoItem Component', () => {
         expect(screen.getByRole('checkbox')).toBeInTheDocument()
         expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument()
         expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
+    })
+
+    it('displays priority and due date', () => {
+        render(<TodoItem {...defaultProps} />)
+
+        expect(screen.getByText('medium')).toBeInTheDocument()
+        expect(screen.getByText(/Due: 12\/31\/2024/)).toBeInTheDocument()
+    })
+
+    it('shows overdue indicator for past due dates', () => {
+        const overdueTodo = { ...mockTodo, dueDate: '2020-01-01' }
+        render(<TodoItem {...defaultProps} todo={overdueTodo} />)
+
+        expect(screen.getByText(/Overdue/)).toBeInTheDocument()
+    })
+
+    it('does not show overdue for completed tasks', () => {
+        const completedOverdueTodo = { 
+            ...mockTodo, 
+            dueDate: '2020-01-01', 
+            completed: true 
+        }
+        render(<TodoItem {...defaultProps} todo={completedOverdueTodo} />)
+
+        expect(screen.queryByText(/Overdue/)).not.toBeInTheDocument()
     })
 
     it('shows completed styling when todo is completed', () => {
@@ -66,25 +93,38 @@ describe('TodoItem Component', () => {
         await user.click(editButton)
 
         expect(screen.getByDisplayValue('Test todo')).toBeInTheDocument()
+        expect(screen.getByDisplayValue('medium')).toBeInTheDocument()
+        expect(screen.getByDisplayValue('2024-12-31')).toBeInTheDocument()
         expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
         expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
     })
 
-    it('calls onEdit when save button is clicked with new text', async () => {
+    it('calls onEdit with all fields when save button is clicked', async () => {
         const user = userEvent.setup()
         render(<TodoItem {...defaultProps} />)
 
         const editButton = screen.getByRole('button', { name: /edit/i })
         await user.click(editButton)
 
-        const input = screen.getByDisplayValue('Test todo')
-        await user.clear(input)
-        await user.type(input, 'Updated todo text')
+        const textInput = screen.getByDisplayValue('Test todo')
+        await user.clear(textInput)
+        await user.type(textInput, 'Updated todo text')
+
+        const prioritySelect = screen.getByDisplayValue('medium')
+        await user.selectOptions(prioritySelect, 'high')
+
+        const dueDateInput = screen.getByDisplayValue('2024-12-31')
+        await user.clear(dueDateInput)
+        await user.type(dueDateInput, '2025-01-15')
 
         const saveButton = screen.getByRole('button', { name: /save/i })
         await user.click(saveButton)
 
-        expect(defaultProps.onEdit).toHaveBeenCalledWith(mockTodo.id, { text: 'Updated todo text' })
+        expect(defaultProps.onEdit).toHaveBeenCalledWith(mockTodo.id, { 
+            text: 'Updated todo text',
+            priority: 'high',
+            dueDate: '2025-01-15'
+        })
     })
 
     it('cancels edit mode without calling onEdit when cancel is clicked', async () => {
@@ -116,7 +156,11 @@ describe('TodoItem Component', () => {
         await user.clear(input)
         await user.type(input, 'Updated via Enter{Enter}')
 
-        expect(defaultProps.onEdit).toHaveBeenCalledWith(mockTodo.id, { text: 'Updated via Enter' })
+        expect(defaultProps.onEdit).toHaveBeenCalledWith(mockTodo.id, { 
+            text: 'Updated via Enter',
+            priority: 'medium',
+            dueDate: '2024-12-31'
+        })
     })
 
     it('cancels edit when Escape key is pressed', async () => {
@@ -165,6 +209,10 @@ describe('TodoItem Component', () => {
         const saveButton = screen.getByRole('button', { name: /save/i })
         await user.click(saveButton)
 
-        expect(defaultProps.onEdit).toHaveBeenCalledWith(mockTodo.id, { text: 'Updated todo text' })
+        expect(defaultProps.onEdit).toHaveBeenCalledWith(mockTodo.id, { 
+            text: 'Updated todo text',
+            priority: 'medium',
+            dueDate: '2024-12-31'
+        })
     })
 })
