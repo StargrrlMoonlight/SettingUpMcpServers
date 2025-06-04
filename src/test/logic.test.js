@@ -16,7 +16,7 @@ describe('Overdue Detection Logic', () => {
 
   describe('isOverdue function logic', () => {
     const isOverdue = (todo) => {
-      return todo.dueDate && !todo.completed && new Date(todo.dueDate) < new Date().setHours(0, 0, 0, 0)
+      return !!(todo.dueDate && !todo.completed && new Date(todo.dueDate) < new Date().setHours(0, 0, 0, 0))
     }
 
     it('returns true for past due dates on incomplete tasks', () => {

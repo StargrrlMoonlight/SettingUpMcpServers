@@ -87,13 +87,17 @@ describe('TodoItem Component', () => {
 
     it('enters edit mode when edit button is clicked', async () => {
         const user = userEvent.setup()
-        render(<TodoItem {...defaultProps} />)
+        const { container } = render(<TodoItem {...defaultProps} />)
 
         const editButton = screen.getByRole('button', { name: /edit/i })
         await user.click(editButton)
 
         expect(screen.getByDisplayValue('Test todo')).toBeInTheDocument()
-        expect(screen.getByDisplayValue('medium')).toBeInTheDocument()
+        
+        // Check that the priority select has the correct value
+        const prioritySelect = container.querySelector('.edit-priority-select')
+        expect(prioritySelect).toHaveValue('medium')
+        
         expect(screen.getByDisplayValue('2024-12-31')).toBeInTheDocument()
         expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
         expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
@@ -101,7 +105,7 @@ describe('TodoItem Component', () => {
 
     it('calls onEdit with all fields when save button is clicked', async () => {
         const user = userEvent.setup()
-        render(<TodoItem {...defaultProps} />)
+        const { container } = render(<TodoItem {...defaultProps} />)
 
         const editButton = screen.getByRole('button', { name: /edit/i })
         await user.click(editButton)
@@ -110,7 +114,7 @@ describe('TodoItem Component', () => {
         await user.clear(textInput)
         await user.type(textInput, 'Updated todo text')
 
-        const prioritySelect = screen.getByDisplayValue('medium')
+        const prioritySelect = container.querySelector('.edit-priority-select')
         await user.selectOptions(prioritySelect, 'high')
 
         const dueDateInput = screen.getByDisplayValue('2024-12-31')

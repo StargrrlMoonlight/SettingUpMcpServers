@@ -42,14 +42,14 @@ describe('TodoList Component', () => {
         render(<TodoList {...defaultProps} />)
 
         expect(screen.getByLabelText('Sort by:')).toBeInTheDocument()
-        expect(screen.getByRole('combobox')).toBeInTheDocument()
+        expect(screen.getByRole('combobox', { name: 'Sort by:' })).toBeInTheDocument()
     })
 
     it('sorts todos by priority when priority sort is selected', async () => {
         const user = userEvent.setup()
         render(<TodoList {...defaultProps} />)
 
-        const sortSelect = screen.getByRole('combobox')
+        const sortSelect = screen.getByRole('combobox', { name: 'Sort by:' })
         await user.selectOptions(sortSelect, 'priority')
 
         // Check that high priority appears first, then medium, then low
@@ -69,7 +69,7 @@ describe('TodoList Component', () => {
         const user = userEvent.setup()
         render(<TodoList {...defaultProps} />)
 
-        const sortSelect = screen.getByRole('combobox')
+        const sortSelect = screen.getByRole('combobox', { name: 'Sort by:' })
         await user.selectOptions(sortSelect, 'dueDate')
 
         // Check that earliest due date appears first
@@ -89,7 +89,7 @@ describe('TodoList Component', () => {
         const user = userEvent.setup()
         render(<TodoList {...defaultProps} />)
 
-        const sortSelect = screen.getByRole('combobox')
+        const sortSelect = screen.getByRole('combobox', { name: 'Sort by:' })
         await user.selectOptions(sortSelect, 'alphabetical')
 
         // Check alphabetical order
@@ -190,7 +190,7 @@ describe('TodoList Component', () => {
         const addButton = screen.getByRole('button', { name: /add task/i })
         await user.click(addButton)
 
-        expect(defaultProps.onAddTodo).toHaveBeenCalledWith('New todo from list', 'medium', '')
+        expect(defaultProps.onAddTodo).toHaveBeenCalledWith('New todo from list', 'medium', null)
     })
 
     it('passes correct props to TodoItem components', () => {
