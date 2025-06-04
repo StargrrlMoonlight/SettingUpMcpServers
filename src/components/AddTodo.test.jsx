@@ -34,7 +34,7 @@ describe('AddTodo Component', () => {
         await user.type(input, 'New todo item')
         await user.click(button)
 
-        expect(mockOnAddTodo).toHaveBeenCalledWith('New todo item')
+        expect(mockOnAddTodo).toHaveBeenCalledWith('New todo item', 'medium', null)
     })
 
     it('calls onAddTodo when Enter key is pressed', async () => {
@@ -46,7 +46,7 @@ describe('AddTodo Component', () => {
         await user.type(input, 'New todo item')
         await user.keyboard('{Enter}')
 
-        expect(mockOnAddTodo).toHaveBeenCalledWith('New todo item')
+        expect(mockOnAddTodo).toHaveBeenCalledWith('New todo item', 'medium', null)
     })
 
     it('clears input after successful submission', async () => {
@@ -88,6 +88,43 @@ describe('AddTodo Component', () => {
         await user.type(input, '  New todo item  ')
         await user.keyboard('{Enter}')
 
-        expect(mockOnAddTodo).toHaveBeenCalledWith('New todo item')
+        expect(mockOnAddTodo).toHaveBeenCalledWith('New todo item', 'medium', null)
+    })
+
+    it('allows setting priority and due date', async () => {
+        const user = userEvent.setup()
+        const mockOnAddTodo = vi.fn()
+        render(<AddTodo onAddTodo={mockOnAddTodo} />)
+
+        const input = screen.getByPlaceholderText(/add a new task/i)
+        const prioritySelect = screen.getByLabelText(/task priority/i)
+        const dueDateInput = screen.getByLabelText(/due date/i)
+        const button = screen.getByRole('button', { name: /add task/i })
+
+        await user.type(input, 'High priority task')
+        await user.selectOptions(prioritySelect, 'high')
+        await user.type(dueDateInput, '2024-12-31')
+        await user.click(button)
+
+        expect(mockOnAddTodo).toHaveBeenCalledWith('High priority task', 'high', '2024-12-31')
+    })
+
+    it('clears all fields after successful submission', async () => {
+        const user = userEvent.setup()
+        const mockOnAddTodo = vi.fn()
+        render(<AddTodo onAddTodo={mockOnAddTodo} />)
+
+        const input = screen.getByPlaceholderText(/add a new task/i)
+        const prioritySelect = screen.getByLabelText(/task priority/i)
+        const dueDateInput = screen.getByLabelText(/due date/i)
+
+        await user.type(input, 'Test task')
+        await user.selectOptions(prioritySelect, 'high')
+        await user.type(dueDateInput, '2024-12-31')
+        await user.keyboard('{Enter}')
+
+        expect(input).toHaveValue('')
+        expect(prioritySelect).toHaveValue('medium')
+        expect(dueDateInput).toHaveValue('')
     })
 })

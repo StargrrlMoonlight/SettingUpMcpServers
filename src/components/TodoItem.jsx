@@ -4,16 +4,27 @@ import './TodoItem.css'
 function TodoItem({ todo, onToggle, onDelete, onEdit }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(todo.text)
+  const [editPriority, setEditPriority] = useState(todo.priority || 'medium')
+  const [editDueDate, setEditDueDate] = useState(todo.dueDate || '')
+
+  // Check if task is overdue
+  const isOverdue = todo.dueDate && !todo.completed && new Date(todo.dueDate) < new Date().setHours(0, 0, 0, 0)
 
   const handleSave = () => {
     if (editText.trim()) {
-      onEdit(todo.id, editText.trim())
+      onEdit(todo.id, { 
+        text: editText.trim(),
+        priority: editPriority,
+        dueDate: editDueDate || null
+      })
       setIsEditing(false)
     }
   }
 
   const handleCancel = () => {
     setEditText(todo.text)
+    setEditPriority(todo.priority || 'medium')
+    setEditDueDate(todo.dueDate || '')
     setIsEditing(false)
   }
 
@@ -26,7 +37,7 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }) {
   }
 
   return (
-    <div className={`todo-item ${todo.completed ? 'completed' : ''}`}>
+    <div className={`todo-item ${todo.completed ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}`} data-priority={todo.priority || 'medium'}>
       <div className="todo-content">
         <button
           className="checkbox"
@@ -39,7 +50,7 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }) {
         </button>
 
         {isEditing ? (
-          <>
+          <div className="edit-form">
             <input
               type="text"
               className="edit-input"
@@ -47,16 +58,47 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }) {
               onChange={(e) => setEditText(e.target.value)}
               onKeyDown={handleKeyPress}
               autoFocus
+              placeholder="Task text"
             />
-          </>
+            <select
+              className="edit-priority-select"
+              value={editPriority}
+              onChange={(e) => setEditPriority(e.target.value)}
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+            <input
+              type="date"
+              className="edit-due-date-input"
+              value={editDueDate}
+              onChange={(e) => setEditDueDate(e.target.value)}
+            />
+          </div>
         ) : (
-          <span
-            className="todo-text"
-            onClick={() => onToggle(todo.id)}
-            onDoubleClick={() => setIsEditing(true)}
-          >
-            {todo.text}
-          </span>
+          <div className="todo-info">
+            <span
+              className="todo-text"
+              onClick={() => onToggle(todo.id)}
+              onDoubleClick={() => setIsEditing(true)}
+            >
+              {todo.text}
+            </span>
+            <div className="todo-meta">
+              {todo.priority && (
+                <span className={`priority-badge priority-${todo.priority}`}>
+                  {todo.priority}
+                </span>
+              )}
+              {todo.dueDate && (
+                <span className={`due-date ${isOverdue ? 'overdue' : ''}`}>
+                  Due: {new Date(todo.dueDate).toLocaleDateString()}
+                  {isOverdue && ' (Overdue)'}
+                </span>
+              )}
+            </div>
+          </div>
         )}
       </div>
 
