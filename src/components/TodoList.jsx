@@ -11,13 +11,14 @@ function TodoList({ todos, onAddTodo, onToggleTodo, onDeleteTodo, onEditTodo }) 
     const sortedTodos = [...todos]
     
     switch (sortBy) {
-      case 'priority':
+      case 'priority': {
         const priorityOrder = { high: 3, medium: 2, low: 1 }
         return sortedTodos.sort((a, b) => {
           const aPriority = priorityOrder[a.priority] || 2
           const bPriority = priorityOrder[b.priority] || 2
           return bPriority - aPriority // High priority first
         })
+      }
       
       case 'dueDate':
         return sortedTodos.sort((a, b) => {
