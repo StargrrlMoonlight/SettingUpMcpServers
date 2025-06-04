@@ -119,6 +119,59 @@
   font-weight: 500;
 }
 
+.due-date.overdue {
+  color: #c53030;
+  font-weight: 600;
+}
+
+/* Overdue task styling */
+.todo-item.overdue {
+  background: rgba(229, 62, 62, 0.05);
+  border-left: 4px solid #e53e3e;
+  animation: pulse-overdue 2s infinite;
+}
+
+.todo-item.overdue:hover {
+  background: rgba(229, 62, 62, 0.1);
+}
+
+@keyframes pulse-overdue {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(229, 62, 62, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(229, 62, 62, 0.3);
+  }
+}
+
+/* Edit form styling */
+.edit-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.edit-priority-select,
+.edit-due-date-input {
+  padding: 0.5rem;
+  border: 1px solid var(--color-secondary);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-family: 'Inter', sans-serif;
+  background: var(--color-white);
+  color: var(--color-primary);
+}
+
+.edit-priority-select {
+  min-width: 80px;
+}
+
+.edit-due-date-input {
+  min-width: 140px;
+}
+
 /* Dark theme priority badges */
 [data-theme="dark"] .priority-high {
   background: #4a1a1a;
@@ -136,6 +189,20 @@
   background: #1a2a4a;
   color: #bee3f8;
   border: 1px solid #2b6cb0;
+}
+
+/* Dark theme overdue styling */
+[data-theme="dark"] .due-date.overdue {
+  color: #fc8181;
+}
+
+[data-theme="dark"] .todo-item.overdue {
+  background: rgba(252, 129, 129, 0.1);
+  border-left: 4px solid #fc8181;
+}
+
+[data-theme="dark"] .todo-item.overdue:hover {
+  background: rgba(252, 129, 129, 0.15);
 }
 
 .edit-input {
@@ -347,6 +414,35 @@
     inset 4px 0 0 rgba(0, 255, 136, 0.3);
 }
 
+/* Vibe theme overdue styling */
+[data-theme="vibe"] .due-date.overdue {
+  color: var(--color-hot-pink);
+  text-shadow: 0 0 5px rgba(255, 27, 141, 0.5);
+}
+
+[data-theme="vibe"] .todo-item.overdue {
+  background: rgba(255, 27, 141, 0.1);
+  border-left: 4px solid var(--color-hot-pink);
+  animation: vibeOverdue 2s infinite;
+}
+
+[data-theme="vibe"] .todo-item.overdue:hover {
+  background: rgba(255, 27, 141, 0.2);
+}
+
+@keyframes vibeOverdue {
+  0%, 100% {
+    box-shadow: 
+      0 0 15px rgba(255, 27, 141, 0.3),
+      inset 4px 0 0 rgba(255, 27, 141, 0.4);
+  }
+  50% {
+    box-shadow: 
+      0 0 25px rgba(255, 27, 141, 0.5),
+      inset 4px 0 0 rgba(255, 27, 141, 0.6);
+  }
+}
+
 @media (max-width: 768px) {
   .todo-item {
     padding: 1rem;
@@ -365,5 +461,17 @@
     width: 28px;
     height: 28px;
     font-size: 14px;
+  }
+  
+  .edit-form {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .edit-input,
+  .edit-priority-select,
+  .edit-due-date-input {
+    width: 100%;
+    min-width: unset;
   }
 }
