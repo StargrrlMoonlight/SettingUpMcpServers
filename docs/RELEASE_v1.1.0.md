@@ -13,13 +13,13 @@ This release includes the highly requested due dates and priority levels functio
 - **Date Sorting**: Todo items can be organized by due date for better planning
 
 #### Priority Levels System
-- **Three Priority Levels**: High, Medium, and Low priority classification
-- **Color-Coded Badges**: Visual priority indicators with distinct colors
+🔹 **Three Priority Levels**: High, Medium, and Low priority classification
+🔹 **Color-Coded Badges**: Visual priority indicators with distinct colors
   - 🔴 High Priority: Red badge for urgent tasks
   - 🟡 Medium Priority: Yellow badge for standard tasks
   - 🟢 Low Priority: Green badge for low-priority items
-- **Priority-Based Sorting**: Organize tasks by priority level
-- **Enhanced Organization**: Combine priority and due dates for optimal task management
+🔹 **Priority-Based Sorting**: Organize tasks by priority level
+🔹 **Enhanced Organization**: Combine priority and due dates for optimal task management
 
 #### User Experience Improvements
 - **Modern UI Controls**: Updated interface with clean, modern date inputs
