@@ -293,7 +293,7 @@ jobs:
           cp README.md release-package/
           cp LICENSE* release-package/ 2>/dev/null || echo "No LICENSE file found"
           
-          # Create archive using standardized version
+          # Create archive using repository name (dynamic)
           tar -czf ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.tar.gz -C release-package .
           zip -r ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.zip release-package/
           
@@ -329,8 +329,8 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            todo-app-${{ needs.test-and-build.outputs.next-version }}.tar.gz
-            todo-app-${{ needs.test-and-build.outputs.next-version }}.zip
+            ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.tar.gz
+            ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.zip
           
       - name: Update package.json version
         run: |
@@ -354,10 +354,10 @@ jobs:
           echo "🎉 Release ${{ needs.test-and-build.outputs.next-version }} created successfully!"
           echo "📦 Release URL: ${{ steps.create_release.outputs.url }}"
           echo "📊 Test Coverage: ${{ needs.test-and-build.outputs.coverage }}%"
-          echo "🚀 Live Demo: https://stargrrlmoonlight.github.io/SettingUpMcpServers"
+          echo "🚀 Live Demo: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
           echo "⬇️ Download assets:"
-          echo "   - todo-app-${{ needs.test-and-build.outputs.next-version }}.tar.gz"
-          echo "   - todo-app-${{ needs.test-and-build.outputs.next-version }}.zip"
+          echo "   - ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.tar.gz"
+          echo "   - ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.zip"
 
   update-coverage-badge:
     name: Update Coverage Badge
@@ -458,8 +458,8 @@ jobs:
           ### Features & Improvements
           - Automated release ${{ needs.test-and-build.outputs.next-version }}
           - Test coverage: ${{ needs.test-and-build.outputs.coverage }}%
-          - Live demo: https://stargrrlmoonlight.github.io/SettingUpMcpServers
-          - Download: [todo-app-${VERSION}.tar.gz](https://github.com/${{ github.repository }}/releases/download/${VERSION}/todo-app-${VERSION}.tar.gz)
+          - Live demo: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          - Download: [${{ github.event.repository.name }}-${VERSION}.tar.gz](https://github.com/${{ github.repository }}/releases/download/${VERSION}/${{ github.event.repository.name }}-${VERSION}.tar.gz)
           
           EOF
           
