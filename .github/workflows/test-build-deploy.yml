@@ -2,7 +2,7 @@ name: Test, Build, Deploy & Release
 
 on:
   push:
-    branches: [ main, 'feature/**' ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -17,7 +17,8 @@ permissions:
 # IMPORTANT: This workflow requires a Personal Access Token (PAT) named 'RELEASE_PAT' 
 # to be configured as a repository secret to bypass branch protection rules for:
 # - Automated version bumps after releases  
-# - Coverage badge updates on feature branches
+# - Coverage badge updates on main branch pushes
+# - CHANGELOG.md synchronization during releases
 #
 # To create the PAT:
 # 1. Go to GitHub Settings → Developer settings → Personal access tokens
@@ -292,7 +293,7 @@ jobs:
           cp README.md release-package/
           cp LICENSE* release-package/ 2>/dev/null || echo "No LICENSE file found"
           
-          # Create archive using standardized version
+          # Create archive using repository name (dynamic)
           tar -czf ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.tar.gz -C release-package .
           zip -r ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.zip release-package/
           
@@ -328,8 +329,8 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            todo-app-${{ needs.test-and-build.outputs.next-version }}.tar.gz
-            todo-app-${{ needs.test-and-build.outputs.next-version }}.zip
+            ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.tar.gz
+            ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.zip
           
       - name: Update package.json version
         run: |
@@ -347,6 +348,30 @@ jobs:
           
           # Push using RELEASE_PAT to bypass branch protection rules
           git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || echo "No changes to push"
+          
+      - name: Notify release completion
+        run: |
+          echo "🎉 Release ${{ needs.test-and-build.outputs.next-version }} created successfully!"
+          echo "📦 Release URL: ${{ steps.create_release.outputs.url }}"
+          echo "📊 Test Coverage: ${{ needs.test-and-build.outputs.coverage }}%"
+          echo "🚀 Live Demo: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          echo "⬇️ Download assets:"
+          echo "   - ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.tar.gz"
+          echo "   - ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.zip"
+
+  update-coverage-badge:
+    name: Update Coverage Badge
+    runs-on: ubuntu-latest
+    needs: [test-and-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT }}
+          persist-credentials: true
           
       - name: Update coverage badge in README
         run: |
@@ -377,7 +402,6 @@ jobs:
             echo "Updated coverage badge to ${COVERAGE}% (${COLOR})"
             
             # Commit the coverage badge update using PAT to bypass branch protection
-            # Note: RELEASE_PAT secret must be configured as described in docs/PAT_SETUP.md
             git config --global user.name "GitHub Actions"
             git config --global user.email "actions@github.com"
             git add README.md
@@ -386,13 +410,70 @@ jobs:
             # Push using RELEASE_PAT to bypass branch protection rules
             git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || echo "No coverage changes to push"
           fi
+
+  sync-changelog:
+    name: Sync CHANGELOG.md 
+    runs-on: ubuntu-latest
+    needs: [test-and-build, create-release]
+    if: needs.test-and-build.outputs.should-release == 'true' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT }}
+          persist-credentials: true
           
-      - name: Notify release completion
+      - name: Update CHANGELOG.md with release information
         run: |
-          echo "🎉 Release ${{ needs.test-and-build.outputs.next-version }} created successfully!"
-          echo "📦 Release URL: ${{ steps.create_release.outputs.url }}"
-          echo "📊 Test Coverage: ${{ needs.test-and-build.outputs.coverage }}%"
-          echo "🚀 Live Demo: https://stargrrlmoonlight.github.io/SettingUpMcpServers"
-          echo "⬇️ Download assets:"
-          echo "   - todo-app-${{ needs.test-and-build.outputs.next-version }}.tar.gz"
-          echo "   - todo-app-${{ needs.test-and-build.outputs.next-version }}.zip"
+          VERSION="${{ needs.test-and-build.outputs.next-version }}"
+          DATE=$(date +"%Y-%m-%d")
+          
+          # Create CHANGELOG.md if it doesn't exist
+          if [ ! -f CHANGELOG.md ]; then
+            cat > CHANGELOG.md << EOF
+          # Changelog
+          
+          All notable changes to this project will be documented in this file.
+          
+          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+          
+          EOF
+          fi
+          
+          # Add new release entry at the top
+          # Create temporary file with new entry
+          cat > temp_changelog.md << EOF
+          # Changelog
+          
+          All notable changes to this project will be documented in this file.
+          
+          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+          
+          ## [${VERSION}] - ${DATE}
+          
+          ### Features & Improvements
+          - Automated release ${{ needs.test-and-build.outputs.next-version }}
+          - Test coverage: ${{ needs.test-and-build.outputs.coverage }}%
+          - Live demo: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          - Download: [${{ github.event.repository.name }}-${VERSION}.tar.gz](https://github.com/${{ github.repository }}/releases/download/${VERSION}/${{ github.event.repository.name }}-${VERSION}.tar.gz)
+          
+          EOF
+          
+          # Append existing changelog content (skip header)
+          if [ -f CHANGELOG.md ]; then
+            sed -n '8,$p' CHANGELOG.md >> temp_changelog.md
+          fi
+          
+          # Replace CHANGELOG.md with updated version
+          mv temp_changelog.md CHANGELOG.md
+          
+          # Commit and push changes
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add CHANGELOG.md
+          git commit -m "docs: update CHANGELOG.md for release ${VERSION}" || echo "No changelog changes to commit"
+          git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || echo "No changelog changes to push"
