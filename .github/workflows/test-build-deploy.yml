@@ -13,6 +13,16 @@ permissions:
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+#
+# IMPORTANT: This workflow requires a Personal Access Token (PAT) named 'RELEASE_PAT' 
+# to be configured as a repository secret to bypass branch protection rules for:
+# - Automated version bumps after releases  
+# - Coverage badge updates on feature branches
+#
+# To create the PAT:
+# 1. Go to GitHub Settings → Developer settings → Personal access tokens
+# 2. Generate new token with 'repo' and 'workflow' scopes
+# 3. Add as repository secret named 'RELEASE_PAT'
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -55,62 +65,13 @@ jobs:
       run: npm run test:ci
       
     - name: Extract coverage percentage
-      if: matrix.node-version == '20.x' && github.event_name == 'pull_request'
+      if: matrix.node-version == '20.x'
       id: coverage
       run: |
         # Extract coverage percentage from the coverage summary
         COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
         echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
         echo "Coverage: $COVERAGE%"
-      
-    - name: Update README with coverage badge
-      if: matrix.node-version == '20.x' && github.event_name == 'pull_request'
-      run: |
-        # Install bc for floating point comparison
-        sudo apt-get update && sudo apt-get install -y bc
-        
-        # Use the coverage percentage from the previous step
-        COVERAGE="${{ steps.coverage.outputs.coverage }}"
-        echo "Using coverage from previous step: $COVERAGE%"
-        
-        # Determine badge color based on coverage
-        if (( $(echo "$COVERAGE >= 90" | bc -l) )); then
-          COLOR=brightgreen
-        elif (( $(echo "$COVERAGE >= 80" | bc -l) )); then
-          COLOR=green
-        elif (( $(echo "$COVERAGE >= 70" | bc -l) )); then
-          COLOR=yellowgreen
-        elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then
-          COLOR=yellow
-        else
-          COLOR=red
-        fi
-        
-        # Create badge URL
-        BADGE_URL="https://img.shields.io/badge/coverage-$COVERAGE%25-$COLOR"
-        
-        # Update README.md with the new badge
-        sed -i -E "s|!\[Coverage\]\(https://img.shields.io/badge/coverage-[0-9]+(\.[0-9]+)?%25-[a-zA-Z]+\)|![Coverage]($BADGE_URL)|g" README.md
-        
-    - name: Commit updated README with coverage badge
-      if: matrix.node-version == '20.x' && github.event_name == 'pull_request'
-      run: |
-        # Configure git with a name and email
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        
-        # Check if there are changes to commit
-        if git diff --quiet README.md; then
-          echo "No changes to README.md, skipping commit"
-          exit 0
-        fi
-        
-        # Stage and commit the changes
-        git add README.md
-        git commit -m "docs: update coverage badge to ${{ steps.coverage.outputs.coverage }}% [skip ci]"
-        
-        # Push to the current feature branch, not main
-        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.head_ref }}
       
     - name: Build application
       run: npm run build
@@ -378,12 +339,53 @@ jobs:
           # Update package.json version
           npm version $VERSION_NUMBER --no-git-tag-version
           
-          # Commit the version update
+          # Commit the version update using PAT to bypass branch protection
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add package.json
           git commit -m "chore: bump version to ${{ needs.test-and-build.outputs.next-version }}" || echo "No changes to commit"
-          git push origin main || echo "No changes to push"
+          
+          # Push using RELEASE_PAT to bypass branch protection rules
+          git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || echo "No changes to push"
+          
+      - name: Update coverage badge in README
+        run: |
+          # Update the coverage badge in README.md with new coverage percentage
+          COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
+          
+          # Determine badge color based on coverage percentage (using integer comparison)
+          COVERAGE_INT=$(echo "$COVERAGE" | cut -d. -f1)
+          if [ "$COVERAGE_INT" -ge 90 ]; then
+            COLOR="brightgreen"
+          elif [ "$COVERAGE_INT" -ge 80 ]; then
+            COLOR="green"
+          elif [ "$COVERAGE_INT" -ge 70 ]; then
+            COLOR="yellow"
+          elif [ "$COVERAGE_INT" -ge 60 ]; then
+            COLOR="orange"
+          else
+            COLOR="red"
+          fi
+          
+          # Update the README.md file
+          sed -i "s/!\[Coverage\](https:\/\/img\.shields\.io\/badge\/coverage-[0-9.]*%25-[a-z]*)/![Coverage](https:\/\/img.shields.io\/badge\/coverage-${COVERAGE}%25-${COLOR})/g" README.md
+          
+          # Check if there were changes
+          if git diff --quiet README.md; then
+            echo "No coverage badge updates needed"
+          else
+            echo "Updated coverage badge to ${COVERAGE}% (${COLOR})"
+            
+            # Commit the coverage badge update using PAT to bypass branch protection
+            # Note: RELEASE_PAT secret must be configured as described in docs/PAT_SETUP.md
+            git config --global user.name "GitHub Actions"
+            git config --global user.email "actions@github.com"
+            git add README.md
+            git commit -m "chore: update coverage badge to ${COVERAGE}%" || echo "No coverage changes to commit"
+            
+            # Push using RELEASE_PAT to bypass branch protection rules
+            git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || echo "No coverage changes to push"
+          fi
           
       - name: Notify release completion
         run: |
