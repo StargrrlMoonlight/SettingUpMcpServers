@@ -1,0 +1,608 @@
+name: Test, Build, and Deploy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CI: true
+  NODE_ENV: test
+
+jobs:
+  # Basic test and build job for PRs and general validation
+  test-and-build:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    
+    outputs:
+      coverage: ${{ steps.coverage.outputs.coverage }}
+      success: ${{ steps.build.outputs.success }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run linter
+      run: npm run lint
+      
+    - name: Run tests with coverage
+      run: npm run test:coverage
+      
+    - name: Extract coverage percentage
+      id: coverage
+      run: |
+        COVERAGE=$(node -e "
+          const fs = require('fs');
+          try {
+            const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+            const total = coverage.total;
+            const percentage = Math.round((total.lines.pct + total.statements.pct + total.functions.pct + total.branches.pct) / 4 * 100) / 100;
+            console.log(percentage);
+          } catch (error) {
+            console.log('0');
+          }
+        ")
+        echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+        echo "Coverage: $COVERAGE%"
+      
+    - name: Build application
+      id: build
+      run: |
+        npm run build
+        echo "success=true" >> $GITHUB_OUTPUT
+
+  # Separate linting job for better organization
+  lint:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run linter
+      run: npm run lint
+
+  # Lightweight test job for version scenarios (only runs on push to main)
+  test-and-build-for-version:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    outputs:
+      coverage: ${{ steps.coverage.outputs.coverage }}
+      build-artifacts: ${{ steps.build.outputs.build-artifacts }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run tests with coverage
+      run: npm run test:coverage
+      
+    - name: Extract coverage percentage  
+      id: coverage
+      run: |
+        COVERAGE=$(node -e "
+          const fs = require('fs');
+          try {
+            const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+            const total = coverage.total;
+            const percentage = Math.round((total.lines.pct + total.statements.pct + total.functions.pct + total.branches.pct) / 4 * 100) / 100;
+            console.log(percentage);
+          } catch (error) {
+            console.log('0');
+          }
+        ")
+        echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+        echo "📊 Coverage: $COVERAGE%"
+
+    - name: Build for production
+      id: build  
+      run: |
+        npm run build
+        echo "build-artifacts=dist/" >> $GITHUB_OUTPUT
+
+  # Enhanced version update job that includes coverage badge updates
+  update-version-files:
+    runs-on: ubuntu-latest
+    needs: [test-and-build-for-version]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    outputs:
+      should-release: ${{ steps.version-check.outputs.should-release }}
+      new-version: ${{ steps.version-check.outputs.new-version }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.WORKFLOW_TOKEN }}
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Configure Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+    - name: Check if version update needed
+      id: version-check
+      run: |
+        # Get the latest tag
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        echo "Latest tag: $LATEST_TAG"
+        
+        # Get commits since last tag
+        COMMITS_SINCE_TAG=$(git rev-list ${LATEST_TAG}..HEAD --count 2>/dev/null || git rev-list HEAD --count)
+        echo "Commits since tag: $COMMITS_SINCE_TAG"
+        
+        if [ "$COMMITS_SINCE_TAG" -gt 0 ]; then
+          # Analyze commit messages for version bump type
+          COMMIT_MESSAGES=$(git log ${LATEST_TAG}..HEAD --pretty=format:"%s" 2>/dev/null || git log --pretty=format:"%s")
+          
+          # Check for breaking changes or major features
+          if echo "$COMMIT_MESSAGES" | grep -E "(BREAKING CHANGE|feat!:|fix!:|chore!:)" > /dev/null; then
+            BUMP_TYPE="major"
+          elif echo "$COMMIT_MESSAGES" | grep -E "(feat:|feature:)" > /dev/null; then
+            BUMP_TYPE="minor"  
+          else
+            BUMP_TYPE="patch"
+          fi
+          
+          echo "Bump type: $BUMP_TYPE"
+          
+          # Calculate new version
+          CURRENT_VERSION=$(echo $LATEST_TAG | sed 's/v//')
+          IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
+          
+          MAJOR=${VERSION_PARTS[0]:-0}
+          MINOR=${VERSION_PARTS[1]:-0}  
+          PATCH=${VERSION_PARTS[2]:-0}
+          
+          case $BUMP_TYPE in
+            "major")
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            "minor")
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            "patch")
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+          
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "New version: v$NEW_VERSION"
+          
+          echo "should-release=true" >> $GITHUB_OUTPUT
+          echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        else
+          echo "No new commits since last tag"
+          echo "should-release=false" >> $GITHUB_OUTPUT  
+        fi
+
+    - name: Update version files and coverage badge
+      if: steps.version-check.outputs.should-release == 'true'
+      run: |
+        NEW_VERSION="${{ steps.version-check.outputs.new-version }}"
+        COVERAGE="${{ needs.test-and-build-for-version.outputs.coverage }}"
+        
+        echo "📦 Updating to version: v$NEW_VERSION"
+        echo "📊 Updating coverage badge to: $COVERAGE%"
+        
+        # Update package.json version
+        npm version $NEW_VERSION --no-git-tag-version
+        
+        # Generate changelog entry
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        COMMIT_MESSAGES=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s (%h)" 2>/dev/null || git log --pretty=format:"- %s (%h)" -n 5)
+        
+        # Prepare changelog content
+        CHANGELOG_ENTRY="## [v$NEW_VERSION] - $(date +%Y-%m-%d)
+
+### Changes
+$COMMIT_MESSAGES
+
+### Coverage
+- Test coverage: $COVERAGE%
+
+---
+"
+        
+        # Update CHANGELOG.md
+        if [ -f "CHANGELOG.md" ]; then
+          # Insert new entry after the first line (title)
+          sed -i "1a\\
+$CHANGELOG_ENTRY" CHANGELOG.md
+        else
+          echo "# Changelog
+
+$CHANGELOG_ENTRY" > CHANGELOG.md
+        fi
+        
+        # Update coverage badge in README.md
+        if [ -f "README.md" ]; then
+          # Determine badge color based on coverage percentage
+          COVERAGE_INT=$(echo "$COVERAGE" | cut -d. -f1)
+          if [ "$COVERAGE_INT" -ge 90 ]; then
+            COLOR="brightgreen"
+          elif [ "$COVERAGE_INT" -ge 80 ]; then
+            COLOR="green"
+          elif [ "$COVERAGE_INT" -ge 70 ]; then
+            COLOR="yellowgreen"
+          elif [ "$COVERAGE_INT" -ge 60 ]; then
+            COLOR="yellow"
+          elif [ "$COVERAGE_INT" -ge 50 ]; then
+            COLOR="orange"
+          else
+            COLOR="red"
+          fi
+          
+          # Create new coverage badge URL
+          NEW_BADGE="![Coverage](https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR})"
+          
+          # Replace existing coverage badge or add it
+          if grep -q "!\[Coverage\]" README.md; then
+            sed -i "s|!\[Coverage\][^)]*)|$NEW_BADGE|g" README.md
+          else
+            # Add badge after the main title
+            sed -i "1a\\
+$NEW_BADGE" README.md
+          fi
+          
+          echo "✅ Updated coverage badge to $COVERAGE% ($COLOR)"
+        fi
+
+    - name: Create consolidated update PR
+      if: steps.version-check.outputs.should-release == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+      run: |
+        NEW_VERSION="${{ steps.version-check.outputs.new-version }}"
+        COVERAGE="${{ needs.test-and-build-for-version.outputs.coverage }}"
+        
+        # Create a new branch for the updates
+        BRANCH_NAME="chore/prepare-release-v$NEW_VERSION"
+        git checkout -b $BRANCH_NAME
+        
+        # Add all changes
+        git add package.json CHANGELOG.md README.md
+        
+        # Commit changes
+        git commit -m "chore: prepare release v$NEW_VERSION
+
+- Update version to $NEW_VERSION
+- Update changelog with recent changes  
+- Update coverage badge to $COVERAGE%
+
+This is an automated release preparation."
+
+        # Push the branch
+        git push origin $BRANCH_NAME
+        
+        # Create PR using GitHub CLI or API
+        PR_BODY="## 🚀 Automated Release Preparation
+
+This PR prepares release **v$NEW_VERSION** with the following updates:
+
+### 📦 Version Update
+- \`package.json\`: Updated to v$NEW_VERSION
+
+### 📝 Changelog  
+- Added changelog entry with recent commits
+- Documented test coverage: **$COVERAGE%**
+
+### 📊 Coverage Badge
+- Updated README.md coverage badge to reflect current $COVERAGE%
+
+### 🤖 Automation
+This PR was automatically created by the release workflow. Once merged, it will trigger:
+- Git tag creation (v$NEW_VERSION)
+- GitHub release with changelog
+- Deployment to GitHub Pages
+
+**Auto-merge**: This PR will be automatically merged if all checks pass."
+
+        # Create PR
+        curl -X POST \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/pulls \
+          -d "{
+            \"title\": \"chore: prepare release v$NEW_VERSION\",
+            \"head\": \"$BRANCH_NAME\",
+            \"base\": \"main\",
+            \"body\": $(echo "$PR_BODY" | jq -Rs .)
+          }"
+
+  # Comprehensive final testing with Node.js version matrix
+  test-and-build-final:
+    runs-on: ubuntu-latest
+    needs: [update-version-files]
+    if: needs.update-version-files.outputs.should-release == 'true'
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        
+    outputs:
+      coverage: ${{ steps.coverage.outputs.coverage }}
+      build-success: ${{ steps.build.outputs.success }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run comprehensive tests
+      run: npm run test:coverage
+      
+    - name: Extract coverage (Node 20.x only)
+      id: coverage
+      if: matrix.node-version == '20.x'
+      run: |
+        COVERAGE=$(node -e "
+          const fs = require('fs');
+          try {
+            const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+            const total = coverage.total;
+            const percentage = Math.round((total.lines.pct + total.statements.pct + total.functions.pct + total.branches.pct) / 4 * 100) / 100;
+            console.log(percentage);
+          } catch (error) {
+            console.log('0');
+          }
+        ")
+        echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+        echo "📊 Final coverage: $COVERAGE%"
+      
+    - name: Build for production
+      id: build
+      if: matrix.node-version == '20.x' && steps.build.outputs.success == 'true'
+      run: |
+        npm run build
+        echo "success=true" >> $GITHUB_OUTPUT
+        
+    - name: Upload build artifacts
+      if: matrix.node-version == '20.x'
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: dist/
+
+  # Tag creation and GitHub release
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [update-version-files, test-and-build-final]
+    if: needs.update-version-files.outputs.should-release == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.WORKFLOW_TOKEN }}
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        
+    - name: Configure Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+        path: dist/
+        
+    - name: Create release archives
+      run: |
+        # Create tar.gz archive
+        tar -czf "SettingUpMcpServers-v${{ needs.update-version-files.outputs.new-version }}.tar.gz" dist/
+        
+        # Create zip archive  
+        cd dist && zip -r "../SettingUpMcpServers-v${{ needs.update-version-files.outputs.new-version }}.zip" . && cd ..
+        
+    - name: Wait for release PR to be merged
+      env:
+        GITHUB_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+      run: |
+        NEW_VERSION="${{ needs.update-version-files.outputs.new-version }}"
+        BRANCH_NAME="chore/prepare-release-v$NEW_VERSION"
+        
+        echo "⏳ Waiting for release PR to be merged..."
+        
+        # Wait for the branch to be merged (it will be deleted after merge)
+        for i in {1..30}; do
+          if ! git ls-remote --heads origin $BRANCH_NAME | grep -q $BRANCH_NAME; then
+            echo "✅ Release PR has been merged!"
+            break
+          fi
+          echo "Waiting... ($i/30)"
+          sleep 10
+        done
+        
+        # Pull latest changes from main
+        git checkout main
+        git pull origin main
+        
+    - name: Create Git tag
+      run: |
+        NEW_VERSION="${{ needs.update-version-files.outputs.new-version }}"
+        git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
+        git push origin "v$NEW_VERSION"
+        
+    - name: Generate release notes
+      id: release-notes
+      run: |
+        NEW_VERSION="${{ needs.update-version-files.outputs.new-version }}"
+        COVERAGE="${{ needs.test-and-build-final.outputs.coverage }}"
+        
+        # Get the previous tag
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 v$NEW_VERSION^ 2>/dev/null || echo "v0.0.0")
+        
+        # Generate commit list
+        COMMITS=$(git log $PREVIOUS_TAG..v$NEW_VERSION --pretty=format:"- %s (%h)" --no-merges)
+        
+        # Create release notes
+        RELEASE_NOTES="## 🚀 What's Changed
+
+$COMMITS
+
+## 📊 Coverage
+- **Test Coverage:** $COVERAGE%
+
+## 🔗 Links
+- [📊 Live Demo](https://StargrrlMoonlight.github.io/SettingUpMcpServers/)
+- [📈 Coverage Report](https://StargrrlMoonlight.github.io/SettingUpMcpServers/coverage/)
+
+## 📦 Downloads
+- Source code (zip)
+- Source code (tar.gz)  
+- Build artifacts (below)
+
+**Full Changelog**: https://github.com/${{ github.repository }}/compare/$PREVIOUS_TAG...v$NEW_VERSION"
+
+        # Save to output
+        echo "release-notes<<EOF" >> $GITHUB_OUTPUT
+        echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+    - name: Create GitHub Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+      run: |
+        NEW_VERSION="${{ needs.update-version-files.outputs.new-version }}"
+        
+        # Create the release
+        curl -X POST \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/releases \
+          -d "{
+            \"tag_name\": \"v$NEW_VERSION\",
+            \"target_commitish\": \"main\",
+            \"name\": \"v$NEW_VERSION\",
+            \"body\": $(echo '${{ steps.release-notes.outputs.release-notes }}' | jq -Rs .),
+            \"draft\": false,
+            \"prerelease\": false
+          }" > release_response.json
+          
+        # Get release ID for asset uploads
+        RELEASE_ID=$(cat release_response.json | jq -r .id)
+        echo "Release ID: $RELEASE_ID"
+        
+        # Upload tar.gz asset
+        curl -X POST \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Content-Type: application/gzip" \
+          --data-binary @"SettingUpMcpServers-v$NEW_VERSION.tar.gz" \
+          "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=SettingUpMcpServers-v$NEW_VERSION.tar.gz"
+          
+        # Upload zip asset  
+        curl -X POST \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Content-Type: application/zip" \
+          --data-binary @"SettingUpMcpServers-v$NEW_VERSION.zip" \
+          "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=SettingUpMcpServers-v$NEW_VERSION.zip"
+
+  # Deploy to GitHub Pages
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [create-release, test-and-build-final]
+    if: needs.update-version-files.outputs.should-release == 'true'
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+      
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application
+      run: npm run build
+      
+    - name: Generate test coverage
+      run: npm run test:coverage
+      
+    - name: Copy coverage to dist
+      run: cp -r coverage dist/coverage
+      
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+      
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: './dist'
+        
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
