@@ -261,6 +261,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
+      - name: Configure Git
+        run: |
+          # Configure git with GitHub Actions identity for all subsequent git operations
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+        
       - name: Create release branch
         id: create-branch
         run: |
@@ -268,10 +274,6 @@ jobs:
           BRANCH_NAME="automated-release/${VERSION}"
           
           echo "Creating release branch: $BRANCH_NAME"
-          
-          # Configure git with GitHub Actions identity
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
           
           # Create and switch to new branch
           git checkout -b "$BRANCH_NAME"
@@ -370,8 +372,8 @@ jobs:
           
           echo "Creating pull request for release $VERSION"
           
-          # Create pull request using GitHub CLI
-          PR_URL=$(gh pr create \
+          # Create pull request using GitHub CLI with JSON output for reliable PR number extraction
+          PR_NUMBER=$(gh pr create \
             --title "chore: prepare release $VERSION" \
             --body "🤖 **Automated Release Preparation**
 
@@ -394,13 +396,11 @@ jobs:
           
           This PR will be **automatically merged** to proceed with the release process." \
             --head "$BRANCH_NAME" \
-            --base main)
+            --base main \
+            --json number \
+            --jq .number)
           
-          echo "✅ Pull request created: $PR_URL"
-          
-          # Extract PR number from URL
-          PR_NUMBER=$(echo "$PR_URL" | grep -o '[0-9]*$')
-          echo "PR number: $PR_NUMBER"
+          echo "✅ Pull request created: #$PR_NUMBER"
           
           # Enable auto-merge for the PR
           echo "🔄 Enabling auto-merge for PR #$PR_NUMBER"
@@ -634,6 +634,12 @@ jobs:
           token: ${{ secrets.RELEASE_PAT }}
           persist-credentials: true
           
+      - name: Configure Git
+        run: |
+          # Configure git with GitHub Actions identity for all subsequent git operations
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
       - name: Update coverage badge in README
         id: check-coverage
         run: |
@@ -673,10 +679,6 @@ jobs:
           BRANCH_NAME="automated-coverage-update/$(date +%Y%m%d-%H%M%S)"
           
           echo "Creating coverage update branch: $BRANCH_NAME"
-          
-          # Configure git with GitHub Actions identity
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
           
           # Create and switch to new branch
           git checkout -b "$BRANCH_NAME"
