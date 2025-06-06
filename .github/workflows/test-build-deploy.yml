@@ -86,7 +86,7 @@ jobs:
         retention-days: 30
 
     - name: Check if release should be created
-      if: matrix.node-version == '20.x' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+      if: matrix.node-version == '20.x' && github.ref == 'refs/heads/main' && github.event_name == 'push' && github.event.head_commit.author.email != 'actions@github.com'
       id: release-check
       run: |
         # Get the latest tag to determine next version
@@ -194,7 +194,7 @@ jobs:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
     needs: [test-and-build, accessibility]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.event.head_commit.author.email != 'actions@github.com'
     environment:
       name: production
       url: ${{ steps.deployment.outputs.page_url }}
@@ -233,8 +233,8 @@ jobs:
             echo "⚠️ Production site may not be ready yet (this is normal for GitHub Pages)"
           fi
 
-  create-release:
-    name: Create Release
+  update-version-files:
+    name: Update Version Files
     runs-on: ubuntu-latest
     needs: [test-and-build, deploy-pages]
     if: needs.test-and-build.outputs.should-release == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -243,7 +243,137 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT }}
+          persist-credentials: true
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Update package.json version
+        run: |
+          # Extract version number without 'v' prefix
+          VERSION_NUMBER=$(echo "${{ needs.test-and-build.outputs.next-version }}" | sed 's/^v//')
+          
+          echo "Updating package.json to version $VERSION_NUMBER"
+          
+          # Update package.json version
+          npm version $VERSION_NUMBER --no-git-tag-version
+          
+      - name: Update CHANGELOG.md with release information
+        run: |
+          VERSION="${{ needs.test-and-build.outputs.next-version }}"
+          DATE=$(date +"%Y-%m-%d")
+          
+          echo "Updating CHANGELOG.md for release ${VERSION}"
+          
+          # Create CHANGELOG.md if it doesn't exist
+          if [ ! -f CHANGELOG.md ]; then
+            cat > CHANGELOG.md << EOF
+          # Changelog
+          
+          All notable changes to this project will be documented in this file.
+          
+          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+          
+          EOF
+          fi
+          
+          # Add new release entry at the top
+          # Create temporary file with new entry
+          cat > temp_changelog.md << EOF
+          # Changelog
+          
+          All notable changes to this project will be documented in this file.
+          
+          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+          
+          ## [${VERSION}] - ${DATE}
+          
+          ### Features & Improvements
+          - Automated release ${{ needs.test-and-build.outputs.next-version }}
+          - Test coverage: ${{ needs.test-and-build.outputs.coverage }}%
+          - Live demo: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          - Download: [${{ github.event.repository.name }}-${VERSION}.tar.gz](https://github.com/${{ github.repository }}/releases/download/${VERSION}/${{ github.event.repository.name }}-${VERSION}.tar.gz)
+          
+          EOF
+          
+          # Append existing changelog content (skip header)
+          if [ -f CHANGELOG.md ]; then
+            sed -n '8,$p' CHANGELOG.md >> temp_changelog.md
+          fi
+          
+          # Replace CHANGELOG.md with updated version
+          mv temp_changelog.md CHANGELOG.md
+          
+      - name: Commit version updates
+        run: |
+          # Configure git with GitHub Actions identity
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          # Check if there are changes to commit
+          if git diff --quiet package.json CHANGELOG.md; then
+            echo "No version changes to commit"
+          else
+            echo "Committing version updates for ${{ needs.test-and-build.outputs.next-version }}"
+            
+            # Add and commit the version updates
+            git add package.json CHANGELOG.md
+            git commit -m "chore: prepare release ${{ needs.test-and-build.outputs.next-version }}" || echo "No changes to commit"
+            
+            # Push using RELEASE_PAT to bypass branch protection rules  
+            echo "Pushing version updates..."
+            git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || {
+              echo "Failed to push version updates. Checking PAT permissions..."
+              echo "RELEASE_PAT status: ${{ secrets.RELEASE_PAT != '' && 'configured' || 'missing' }}"
+              exit 1
+            }
+          fi
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [test-and-build, update-version-files]
+    if: needs.test-and-build.outputs.should-release == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
           fetch-depth: 0  # Fetch full history for changelog generation
+          ref: main  # Ensure we get the latest commit with version updates
+          token: ${{ secrets.RELEASE_PAT }}  # Use PAT to get latest commits
+          
+      - name: Pull latest changes with version updates
+        run: |
+          echo "🔄 Ensuring we have the latest version updates..."
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git pull origin main
+          
+          # Verify we have the updated package.json version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          EXPECTED_VERSION=$(echo "${{ needs.test-and-build.outputs.next-version }}" | sed 's/^v//')
+          
+          echo "Current package.json version: $CURRENT_VERSION"
+          echo "Expected version: $EXPECTED_VERSION"
+          
+          if [ "$CURRENT_VERSION" != "$EXPECTED_VERSION" ]; then
+            echo "⚠️ Warning: Version mismatch detected!"
+            echo "This means the version update from update-version-files job hasn't been pulled yet."
+            exit 1
+          else
+            echo "✅ Version is correct - proceeding with release"
+          fi
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -286,6 +416,22 @@ jobs:
           
       - name: Create release archive
         run: |
+          # Verify we have the correct package.json version before archiving
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          EXPECTED_VERSION=$(echo "${{ needs.test-and-build.outputs.next-version }}" | sed 's/^v//')
+          
+          echo "📦 Creating release archive..."
+          echo "Current package.json version: $CURRENT_VERSION"
+          echo "Expected version: $EXPECTED_VERSION"
+          
+          if [ "$CURRENT_VERSION" != "$EXPECTED_VERSION" ]; then
+            echo "❌ ERROR: Version mismatch in package.json!"
+            echo "This means the release will contain the wrong version number."
+            exit 1
+          fi
+          
+          echo "✅ Package.json version is correct - proceeding with archive creation"
+          
           # Create a clean distribution package
           mkdir -p release-package
           cp -r dist/* release-package/
@@ -293,9 +439,15 @@ jobs:
           cp README.md release-package/
           cp LICENSE* release-package/ 2>/dev/null || echo "No LICENSE file found"
           
+          # Verify the copied package.json has the correct version
+          ARCHIVE_VERSION=$(node -p "require('./release-package/package.json').version")
+          echo "Archive package.json version: $ARCHIVE_VERSION"
+          
           # Create archive using repository name (dynamic)
           tar -czf ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.tar.gz -C release-package .
           zip -r ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.zip release-package/
+          
+          echo "✅ Release archives created successfully with version $ARCHIVE_VERSION"
           
       - name: Create GitHub Release
         id: create_release
@@ -332,23 +484,6 @@ jobs:
             ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.tar.gz
             ${{ github.event.repository.name }}-${{ needs.test-and-build.outputs.next-version }}.zip
           
-      - name: Update package.json version
-        run: |
-          # Extract version number without 'v' prefix
-          VERSION_NUMBER=$(echo "${{ needs.test-and-build.outputs.next-version }}" | sed 's/^v//')
-          
-          # Update package.json version
-          npm version $VERSION_NUMBER --no-git-tag-version
-          
-          # Commit the version update using PAT to bypass branch protection
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add package.json
-          git commit -m "chore: bump version to ${{ needs.test-and-build.outputs.next-version }}" || echo "No changes to commit"
-          
-          # Push using RELEASE_PAT to bypass branch protection rules
-          git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || echo "No changes to push"
-          
       - name: Notify release completion
         run: |
           echo "🎉 Release ${{ needs.test-and-build.outputs.next-version }} created successfully!"
@@ -363,7 +498,7 @@ jobs:
     name: Update Coverage Badge
     runs-on: ubuntu-latest
     needs: [test-and-build]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.event.head_commit.author.email != 'actions@github.com'
     
     steps:
       - name: Checkout code
@@ -401,21 +536,27 @@ jobs:
           else
             echo "Updated coverage badge to ${COVERAGE}% (${COLOR})"
             
-            # Commit the coverage badge update using PAT to bypass branch protection
+            # Configure git with GitHub Actions identity
             git config --global user.name "GitHub Actions"
             git config --global user.email "actions@github.com"
+            
+            # Add and commit the coverage badge update
             git add README.md
             git commit -m "chore: update coverage badge to ${COVERAGE}%" || echo "No coverage changes to commit"
             
             # Push using RELEASE_PAT to bypass branch protection rules
-            git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || echo "No coverage changes to push"
+            echo "Pushing coverage badge update..."
+            git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || {
+              echo "Failed to push coverage badge update. This may cause conflicts with other automated commits."
+              echo "RELEASE_PAT status: ${{ secrets.RELEASE_PAT != '' && 'configured' || 'missing' }}"
+            }
           fi
 
   sync-changelog:
     name: Sync CHANGELOG.md 
     runs-on: ubuntu-latest
     needs: [test-and-build, create-release]
-    if: needs.test-and-build.outputs.should-release == 'true' && github.ref == 'refs/heads/main'
+    if: needs.test-and-build.outputs.should-release == 'true' && github.ref == 'refs/heads/main' && github.event.head_commit.author.email != 'actions@github.com'
     
     steps:
       - name: Checkout code
@@ -472,8 +613,23 @@ jobs:
           mv temp_changelog.md CHANGELOG.md
           
           # Commit and push changes
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add CHANGELOG.md
-          git commit -m "docs: update CHANGELOG.md for release ${VERSION}" || echo "No changelog changes to commit"
-          git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || echo "No changelog changes to push"
+          if git diff --quiet CHANGELOG.md; then
+            echo "No CHANGELOG.md changes to commit"
+          else
+            echo "Updated CHANGELOG.md for release ${VERSION}"
+            
+            # Configure git with GitHub Actions identity
+            git config --global user.name "GitHub Actions"
+            git config --global user.email "actions@github.com"
+            
+            # Add and commit changes
+            git add CHANGELOG.md
+            git commit -m "docs: update CHANGELOG.md for release ${VERSION}" || echo "No changelog changes to commit"
+            
+            # Push using RELEASE_PAT to bypass branch protection rules
+            echo "Pushing CHANGELOG.md update..."
+            git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || {
+              echo "Failed to push CHANGELOG.md update"
+              echo "RELEASE_PAT status: ${{ secrets.RELEASE_PAT != '' && 'configured' || 'missing' }}"
+            }
+          fi
