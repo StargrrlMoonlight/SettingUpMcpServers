@@ -10,15 +10,16 @@ permissions:
   contents: write
   pages: write
   id-token: write
+  pull-requests: write
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 #
 # IMPORTANT: This workflow requires a Personal Access Token (PAT) named 'RELEASE_PAT' 
-# to be configured as a repository secret to bypass branch protection rules for:
-# - Automated version bumps after releases  
-# - Coverage badge updates on main branch pushes
-# - CHANGELOG.md synchronization during releases
+# to be configured as a repository secret for:
+# - Creating automated pull requests for version updates
+# - Auto-merging release and coverage update PRs
+# - Working with branch protection by using PR-based automation
 #
 # To create the PAT:
 # 1. Go to GitHub Settings → Developer settings → Personal access tokens
@@ -239,6 +240,10 @@ jobs:
     needs: [test-and-build, deploy-pages]
     if: needs.test-and-build.outputs.should-release == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
     
+    outputs:
+      pr-created: ${{ steps.create-pr.outputs.pr-created || 'false' }}
+      pr-number: ${{ steps.create-pr.outputs.pr-number || '' }}
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -256,6 +261,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
+      - name: Configure Git
+        run: |
+          # Configure git with GitHub Actions identity for all subsequent git operations
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+        
+      - name: Create release branch
+        id: create-branch
+        run: |
+          VERSION="${{ needs.test-and-build.outputs.next-version }}"
+          BRANCH_NAME="automated-release/${VERSION}"
+          
+          echo "Creating release branch: $BRANCH_NAME"
+          
+          # Create and switch to new branch
+          git checkout -b "$BRANCH_NAME"
+          echo "branch-name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          
       - name: Update package.json version
         run: |
           # Extract version number without 'v' prefix
@@ -320,30 +343,108 @@ jobs:
           # Replace CHANGELOG.md with updated version
           mv temp_changelog.md CHANGELOG.md
           
-      - name: Commit version updates
+      - name: Commit and push version updates to release branch
+        id: commit-changes
         run: |
-          # Configure git with GitHub Actions identity
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          
           # Check if there are changes to commit
           if git diff --quiet package.json CHANGELOG.md; then
             echo "No version changes to commit"
+            echo "has-changes=false" >> $GITHUB_OUTPUT
           else
             echo "Committing version updates for ${{ needs.test-and-build.outputs.next-version }}"
             
             # Add and commit the version updates
             git add package.json CHANGELOG.md
-            git commit -m "chore: prepare release ${{ needs.test-and-build.outputs.next-version }}" || echo "No changes to commit"
+            git commit -m "chore: prepare release ${{ needs.test-and-build.outputs.next-version }}"
             
-            # Push using RELEASE_PAT to bypass branch protection rules  
-            echo "Pushing version updates..."
-            git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || {
-              echo "Failed to push version updates. Checking PAT permissions..."
-              echo "RELEASE_PAT status: ${{ secrets.RELEASE_PAT != '' && 'configured' || 'missing' }}"
-              exit 1
-            }
+            # Push release branch to origin
+            echo "Pushing release branch..."
+            git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git "${{ steps.create-branch.outputs.branch-name }}"
+            echo "has-changes=true" >> $GITHUB_OUTPUT
           fi
+          
+      - name: Create and auto-merge pull request
+        id: create-pr
+        if: steps.commit-changes.outputs.has-changes == 'true'
+        run: |
+          VERSION="${{ needs.test-and-build.outputs.next-version }}"
+          BRANCH_NAME="${{ steps.create-branch.outputs.branch-name }}"
+          
+          echo "Creating pull request for release $VERSION"
+          
+          # Create pull request using GitHub CLI with JSON output for reliable PR number extraction
+          PR_NUMBER=$(gh pr create \
+            --title "chore: prepare release $VERSION" \
+            --body "🤖 **Automated Release Preparation**
+
+          This PR contains automated version updates for release \`$VERSION\`.
+
+          ## Changes
+          - 📦 Updated \`package.json\` version to \`$(echo "$VERSION" | sed 's/^v//')\`
+          - 📝 Updated \`CHANGELOG.md\` with release information
+          
+          ## Test Coverage
+          📊 Current coverage: ${{ needs.test-and-build.outputs.coverage }}%
+          
+          ## After Merge
+          🚀 GitHub release will be automatically created with:
+          - Release notes and changelog
+          - Downloadable archives (.tar.gz and .zip)
+          - Live demo link
+          
+          ---
+          
+          This PR will be **automatically merged** to proceed with the release process." \
+            --head "$BRANCH_NAME" \
+            --base main \
+            --json number \
+            --jq .number)
+          
+          echo "✅ Pull request created: #$PR_NUMBER"
+          
+          # Enable auto-merge for the PR
+          echo "🔄 Enabling auto-merge for PR #$PR_NUMBER"
+          gh pr merge "$PR_NUMBER" --auto --squash --delete-branch
+          
+          echo "✅ Auto-merge enabled for PR #$PR_NUMBER"
+          echo "🕐 Waiting for PR to be automatically merged..."
+          
+          # Store outputs
+          if [ "$?" -eq 0 ]; then
+            echo "pr-created=true" >> $GITHUB_OUTPUT
+            echo "pr-number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          else
+            echo "pr-created=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Wait for auto-merge to complete (with timeout)
+          TIMEOUT=300  # 5 minutes
+          ELAPSED=0
+          INTERVAL=10
+          
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            echo "⏳ Checking PR status... (${ELAPSED}s elapsed)"
+            
+            PR_STATE=$(gh pr view "$PR_NUMBER" --json state --jq '.state')
+            if [ "$PR_STATE" = "MERGED" ]; then
+              echo "✅ PR #$PR_NUMBER has been automatically merged!"
+              break
+            elif [ "$PR_STATE" = "CLOSED" ]; then
+              echo "❌ PR #$PR_NUMBER was closed without merging"
+              exit 1
+            fi
+            
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+          
+          if [ $ELAPSED -ge $TIMEOUT ]; then
+            echo "⚠️ Timeout waiting for auto-merge to complete"
+            echo "PR #$PR_NUMBER may still be pending. Check GitHub for status."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
 
   create-release:
     name: Create Release
@@ -352,6 +453,15 @@ jobs:
     if: needs.test-and-build.outputs.should-release == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
+      - name: Wait for version updates to be merged
+        if: needs.update-version-files.outputs.pr-created == 'true'
+        run: |
+          echo "🕐 Waiting for version update PR to be merged before creating release..."
+          echo "PR #${{ needs.update-version-files.outputs.pr-number }} should be auto-merged"
+          
+          # Additional safety wait to ensure merge is fully processed
+          sleep 30
+          
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -375,11 +485,21 @@ jobs:
           
           if [ "$CURRENT_VERSION" != "$EXPECTED_VERSION" ]; then
             echo "⚠️ Warning: Version mismatch detected!"
-            echo "This means the version update from update-version-files job hasn't been pulled yet."
-            exit 1
-          else
-            echo "✅ Version is correct - proceeding with release"
+            echo "This means the version update PR hasn't been merged yet."
+            echo "Retrying in 30 seconds..."
+            sleep 30
+            git pull origin main
+            
+            # Check again
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            if [ "$CURRENT_VERSION" != "$EXPECTED_VERSION" ]; then
+              echo "❌ ERROR: Version still doesn't match after retry!"
+              echo "Expected: $EXPECTED_VERSION, Got: $CURRENT_VERSION"
+              exit 1
+            fi
           fi
+          
+          echo "✅ Version is correct - proceeding with release"
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -514,7 +634,14 @@ jobs:
           token: ${{ secrets.RELEASE_PAT }}
           persist-credentials: true
           
+      - name: Configure Git
+        run: |
+          # Configure git with GitHub Actions identity for all subsequent git operations
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
       - name: Update coverage badge in README
+        id: check-coverage-changes
         run: |
           # Update the coverage badge in README.md with new coverage percentage
           COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
@@ -539,103 +666,55 @@ jobs:
           # Check if there were changes
           if git diff --quiet README.md; then
             echo "No coverage badge updates needed"
+            echo "has-changes=false" >> $GITHUB_OUTPUT
           else
             echo "Updated coverage badge to ${COVERAGE}% (${COLOR})"
-            
-            # Configure git with GitHub Actions identity
-            git config --global user.name "GitHub Actions"
-            git config --global user.email "actions@github.com"
-            
-            # Add and commit the coverage badge update
-            git add README.md
-            git commit -m "chore: update coverage badge to ${COVERAGE}%" || echo "No coverage changes to commit"
-            
-            # Push using RELEASE_PAT to bypass branch protection rules
-            echo "Pushing coverage badge update..."
-            git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || {
-              echo "Failed to push coverage badge update. This may cause conflicts with other automated commits."
-              echo "RELEASE_PAT status: ${{ secrets.RELEASE_PAT != '' && 'configured' || 'missing' }}"
-            }
+            echo "has-changes=true" >> $GITHUB_OUTPUT
           fi
-
-  sync-changelog:
-    name: Sync CHANGELOG.md 
-    runs-on: ubuntu-latest
-    needs: [test-and-build, create-release]
-    if: needs.test-and-build.outputs.should-release == 'true' && github.ref == 'refs/heads/main' && github.event.head_commit.author.email != 'actions@github.com'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.RELEASE_PAT }}
-          persist-credentials: true
           
-      - name: Update CHANGELOG.md with release information
+      - name: Create coverage update pull request
+        if: steps.check-coverage-changes.outputs.has-changes == 'true'
         run: |
-          VERSION="${{ needs.test-and-build.outputs.next-version }}"
-          DATE=$(date +"%Y-%m-%d")
+          COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
+          BRANCH_NAME="automated-coverage-update/$(date +%Y%m%d-%H%M%S)"
           
-          # Create CHANGELOG.md if it doesn't exist
-          if [ ! -f CHANGELOG.md ]; then
-            cat > CHANGELOG.md << EOF
-          # Changelog
+          echo "Creating coverage update branch: $BRANCH_NAME"
           
-          All notable changes to this project will be documented in this file.
+          # Create and switch to new branch
+          git checkout -b "$BRANCH_NAME"
           
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+          # Add and commit the coverage badge update
+          git add README.md
+          git commit -m "chore: update coverage badge to ${COVERAGE}%"
           
-          EOF
-          fi
+          # Push coverage update branch to origin
+          echo "Pushing coverage update branch..."
+          git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git "$BRANCH_NAME"
           
-          # Add new release entry at the top
-          # Create temporary file with new entry
-          cat > temp_changelog.md << EOF
-          # Changelog
+          # Create pull request using GitHub CLI
+          PR_URL=$(gh pr create \
+            --title "chore: update coverage badge to ${COVERAGE}%" \
+            --body "🤖 **Automated Coverage Badge Update**
+
+          This PR updates the coverage badge in README.md.
+
+          ## Changes
+          - 📊 Updated coverage badge to \`${COVERAGE}%\`
           
-          All notable changes to this project will be documented in this file.
+          ---
           
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+          This PR will be **automatically merged** to keep the coverage badge up to date." \
+            --head "$BRANCH_NAME" \
+            --base main)
           
-          ## [${VERSION}] - ${DATE}
+          echo "✅ Coverage update PR created: $PR_URL"
           
-          ### Features & Improvements
-          - Automated release ${{ needs.test-and-build.outputs.next-version }}
-          - Test coverage: ${{ needs.test-and-build.outputs.coverage }}%
-          - Live demo: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
-          - Download: [${{ github.event.repository.name }}-${VERSION}.tar.gz](https://github.com/${{ github.repository }}/releases/download/${VERSION}/${{ github.event.repository.name }}-${VERSION}.tar.gz)
+          # Extract PR number and enable auto-merge
+          PR_NUMBER=$(echo "$PR_URL" | grep -o '[0-9]*$')
+          gh pr merge "$PR_NUMBER" --auto --squash --delete-branch
           
-          EOF
-          
-          # Append existing changelog content (skip header)
-          if [ -f CHANGELOG.md ]; then
-            sed -n '8,$p' CHANGELOG.md >> temp_changelog.md
-          fi
-          
-          # Replace CHANGELOG.md with updated version
-          mv temp_changelog.md CHANGELOG.md
-          
-          # Commit and push changes
-          if git diff --quiet CHANGELOG.md; then
-            echo "No CHANGELOG.md changes to commit"
-          else
-            echo "Updated CHANGELOG.md for release ${VERSION}"
-            
-            # Configure git with GitHub Actions identity
-            git config --global user.name "GitHub Actions"
-            git config --global user.email "actions@github.com"
-            
-            # Add and commit changes
-            git add CHANGELOG.md
-            git commit -m "docs: update CHANGELOG.md for release ${VERSION}" || echo "No changelog changes to commit"
-            
-            # Push using RELEASE_PAT to bypass branch protection rules
-            echo "Pushing CHANGELOG.md update..."
-            git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || {
-              echo "Failed to push CHANGELOG.md update"
-              echo "RELEASE_PAT status: ${{ secrets.RELEASE_PAT != '' && 'configured' || 'missing' }}"
-            }
-          fi
+          echo "✅ Auto-merge enabled for coverage update PR #$PR_NUMBER"
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+
+
