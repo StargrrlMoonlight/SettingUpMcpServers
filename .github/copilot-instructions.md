@@ -58,11 +58,46 @@ This is a React todo-list web application built with Vite. The design should mai
    - Assign GitHub Copilot as reviewer
    - Include screenshots for UI changes
 
+5. **STEP 5: Automated Release Process**
+   - After PR merge to main branch, automated release process begins
+   - Semantic versioning based on conventional commit messages
+   - GitHub release creation with changelog and artifacts
+   - No manual intervention required for standard releases
+
 **❌ VIOLATIONS THAT ARE NEVER ACCEPTABLE:**
 - Making changes directly to main branch
 - Creating code without a corresponding GitHub issue
 - Skipping the branch creation step
 - Working without following the established workflow
+
+### Automated Release Management
+This repository features sophisticated automated release management that AI agents should understand:
+
+#### Semantic Versioning Logic
+- **Major Version (v2.0.0)**: `BREAKING CHANGE` or `feat!` commits
+- **Minor Version (v1.1.0)**: `feat` or `feature` commits  
+- **Patch Version (v1.0.1)**: `fix`, `docs`, `style`, `chore`, etc.
+
+#### Release Automation Features
+- ✅ **Automatic Version Calculation** - Based on conventional commit analysis since last tag
+- ✅ **GitHub Release Creation** - With detailed changelog and downloadable artifacts
+- ✅ **Coverage Integration** - Test coverage percentage included in release notes
+- ✅ **Artifact Packaging** - Built application bundled as .tar.gz and .zip files
+- ✅ **Branch Protection Integration** - Uses PAT for automated version bumps
+- ✅ **Live Demo Links** - Automatic GitHub Pages deployment URLs
+
+#### AI Agent Release Guidelines
+**DO:**
+- ✅ Use conventional commit messages to control version bumping
+- ✅ Include "BREAKING CHANGE" in commit body for major versions
+- ✅ Let the automation handle release creation after PR merge
+- ✅ Reference the automated release process in PR descriptions
+
+**DON'T:**
+- ❌ Manually create GitHub releases (automation handles this)
+- ❌ Manually update version numbers in package.json
+- ❌ Skip conventional commit message format
+- ❌ Create releases from feature branches
 
 ### Issue-Driven Development
 - **Always create a GitHub issue first** before starting any new feature or bug fix
@@ -87,5 +122,7 @@ Before making ANY changes to this repository, AI agents must complete this check
 - [ ] ✅ Am I working on the feature branch (NOT main branch)?
 - [ ] ✅ Does my work reference the GitHub issue number?
 - [ ] ✅ Have I followed all styling and technical guidelines?
+- [ ] ✅ Am I using conventional commit messages for proper version control?
+- [ ] ✅ Do I understand that releases are automated after PR merge?
 
 **If ANY box is unchecked, STOP and complete the missing steps before proceeding.**
