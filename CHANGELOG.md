@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Live demo: https://StargrrlMoonlight.github.io/SettingUpMcpServers
 - Download: [SettingUpMcpServers-v1.3.1.tar.gz](https://github.com/StargrrlMoonlight/SettingUpMcpServers/releases/download/v1.3.1/SettingUpMcpServers-v1.3.1.tar.gz)
 
-## [Unreleased]
+## [v1.0.0 - v1.3.0]
 
 ### Added
 - Comprehensive documentation structure reorganization
@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Duplicate content across documentation files
 - Temporary testing files
 
-## [1.0.0] - TBD
+## [1.0.0] 
 
 ### Added
 - Initial React Todo List application
