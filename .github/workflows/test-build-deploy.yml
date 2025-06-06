@@ -263,8 +263,14 @@ jobs:
           
           echo "Updating package.json to version $VERSION_NUMBER"
           
-          # Update package.json version
-          npm version $VERSION_NUMBER --no-git-tag-version
+          # Update package.json version directly (no git interaction)
+          node -e "
+          const pkg = require('./package.json');
+          pkg.version = process.argv[1];
+          require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+          " $VERSION_NUMBER
+          
+          echo "✅ Updated package.json version to $VERSION_NUMBER"
           
       - name: Update CHANGELOG.md with release information
         run: |
