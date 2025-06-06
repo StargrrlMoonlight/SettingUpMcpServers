@@ -35,6 +35,35 @@ This is a React todo-list web application built with Vite. The design should mai
 
 ## Development Workflow
 
+### 🤖 AI Agent Workflow Requirements
+**CRITICAL: ALL AI agents (including GitHub Copilot, Claude, etc.) MUST follow this exact process:**
+
+1. **STEP 1: Create GitHub Issue FIRST**
+   - Before making ANY code changes
+   - Before creating ANY branches
+   - Use descriptive titles with appropriate emojis
+   - Include acceptance criteria and technical details
+
+2. **STEP 2: Create Feature Branch**
+   - Use naming convention: `feature/issue-{number}-{short-description}`
+   - Branch from main/master branch
+   - NEVER work directly on main branch
+
+3. **STEP 3: Make Code Changes**
+   - Only after completing steps 1 and 2
+   - Follow all styling and technical guidelines
+
+4. **STEP 4: Submit Pull Request**
+   - Reference the GitHub issue (e.g., "Closes #57")
+   - Assign GitHub Copilot as reviewer
+   - Include screenshots for UI changes
+
+**❌ VIOLATIONS THAT ARE NEVER ACCEPTABLE:**
+- Making changes directly to main branch
+- Creating code without a corresponding GitHub issue
+- Skipping the branch creation step
+- Working without following the established workflow
+
 ### Issue-Driven Development
 - **Always create a GitHub issue first** before starting any new feature or bug fix
 - Every pull request must reference a corresponding GitHub issue
@@ -49,11 +78,14 @@ This is a React todo-list web application built with Vite. The design should mai
 - Never work directly on the main branch
 - Delete feature branches after successful merge
 
-### Pull Request Process
-- Create pull requests that reference the GitHub issue (e.g., "Closes #5")
-- **Always assign GitHub Copilot as a reviewer** for automated code analysis
-- Include screenshots or demos for UI changes
-- Ensure all tests pass and code follows the established style guidelines
-- Request human review after Copilot review is complete
-- Address all feedback before merging
-- Delete feature branches after successful merge
+## 📋 Pre-Work Checklist for AI Agents
+
+Before making ANY changes to this repository, AI agents must complete this checklist:
+
+- [ ] ✅ Have I created a GitHub issue for this work?
+- [ ] ✅ Have I created a feature branch using the correct naming convention?
+- [ ] ✅ Am I working on the feature branch (NOT main branch)?
+- [ ] ✅ Does my work reference the GitHub issue number?
+- [ ] ✅ Have I followed all styling and technical guidelines?
+
+**If ANY box is unchecked, STOP and complete the missing steps before proceeding.**
