@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.11.1] - 2025-06-06
+
+### Features & Improvements
+- Automated release v1.11.1
+- Test coverage: 92.83%
+- Live demo: https://StargrrlMoonlight.github.io/SettingUpMcpServers
+- Download: [SettingUpMcpServers-v1.11.1.tar.gz](https://github.com/StargrrlMoonlight/SettingUpMcpServers/releases/download/v1.11.1/SettingUpMcpServers-v1.11.1.tar.gz)
+
 ## [v1.11.0] - 2025-06-06
 
 ### Features & Improvements
