@@ -19,7 +19,7 @@ permissions:
 # to be configured as a repository secret for:
 # - Creating automated pull requests for version updates
 # - Auto-merging release and coverage update PRs
-# - Bypassing branch protection for automated changes
+# - Working with branch protection by using PR-based automation
 #
 # To create the PAT:
 # 1. Go to GitHub Settings → Developer settings → Personal access tokens
@@ -641,7 +641,7 @@ jobs:
           git config --global user.email "actions@github.com"
           
       - name: Update coverage badge in README
-        id: check-coverage
+        id: check-coverage-changes
         run: |
           # Update the coverage badge in README.md with new coverage percentage
           COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
@@ -673,7 +673,7 @@ jobs:
           fi
           
       - name: Create coverage update pull request
-        if: steps.check-coverage.outputs.has-changes == 'true'
+        if: steps.check-coverage-changes.outputs.has-changes == 'true'
         run: |
           COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
           BRANCH_NAME="automated-coverage-update/$(date +%Y%m%d-%H%M%S)"
