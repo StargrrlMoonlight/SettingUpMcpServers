@@ -2,7 +2,7 @@ name: Test, Build, Deploy & Release
 
 on:
   push:
-    branches: [ main, 'feature/**' ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -396,3 +396,122 @@ jobs:
           echo "⬇️ Download assets:"
           echo "   - todo-app-${{ needs.test-and-build.outputs.next-version }}.tar.gz"
           echo "   - todo-app-${{ needs.test-and-build.outputs.next-version }}.zip"
+
+  update-coverage-badge:
+    name: Update Coverage Badge
+    runs-on: ubuntu-latest
+    needs: [test-and-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT }}
+          persist-credentials: true
+          
+      - name: Update coverage badge in README
+        run: |
+          # Update the coverage badge in README.md with new coverage percentage
+          COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
+          
+          # Determine badge color based on coverage percentage (using integer comparison)
+          COVERAGE_INT=$(echo "$COVERAGE" | cut -d. -f1)
+          if [ "$COVERAGE_INT" -ge 90 ]; then
+            COLOR="brightgreen"
+          elif [ "$COVERAGE_INT" -ge 80 ]; then
+            COLOR="green"
+          elif [ "$COVERAGE_INT" -ge 70 ]; then
+            COLOR="yellow"
+          elif [ "$COVERAGE_INT" -ge 60 ]; then
+            COLOR="orange"
+          else
+            COLOR="red"
+          fi
+          
+          # Update the README.md file
+          sed -i "s/!\[Coverage\](https:\/\/img\.shields\.io\/badge\/coverage-[0-9.]*%25-[a-z]*)/![Coverage](https:\/\/img.shields.io\/badge\/coverage-${COVERAGE}%25-${COLOR})/g" README.md
+          
+          # Check if there were changes
+          if git diff --quiet README.md; then
+            echo "No coverage badge updates needed"
+          else
+            echo "Updated coverage badge to ${COVERAGE}% (${COLOR})"
+            
+            # Commit the coverage badge update using PAT to bypass branch protection
+            git config --global user.name "GitHub Actions"
+            git config --global user.email "actions@github.com"
+            git add README.md
+            git commit -m "chore: update coverage badge to ${COVERAGE}%" || echo "No coverage changes to commit"
+            
+            # Push using RELEASE_PAT to bypass branch protection rules
+            git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || echo "No coverage changes to push"
+          fi
+
+  sync-changelog:
+    name: Sync CHANGELOG.md 
+    runs-on: ubuntu-latest
+    needs: [test-and-build, create-release]
+    if: needs.test-and-build.outputs.should-release == 'true' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT }}
+          persist-credentials: true
+          
+      - name: Update CHANGELOG.md with release information
+        run: |
+          VERSION="${{ needs.test-and-build.outputs.next-version }}"
+          DATE=$(date +"%Y-%m-%d")
+          
+          # Create CHANGELOG.md if it doesn't exist
+          if [ ! -f CHANGELOG.md ]; then
+            cat > CHANGELOG.md << EOF
+          # Changelog
+          
+          All notable changes to this project will be documented in this file.
+          
+          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+          
+          EOF
+          fi
+          
+          # Add new release entry at the top
+          # Create temporary file with new entry
+          cat > temp_changelog.md << EOF
+          # Changelog
+          
+          All notable changes to this project will be documented in this file.
+          
+          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+          
+          ## [${VERSION}] - ${DATE}
+          
+          ### Features & Improvements
+          - Automated release ${{ needs.test-and-build.outputs.next-version }}
+          - Test coverage: ${{ needs.test-and-build.outputs.coverage }}%
+          - Live demo: https://stargrrlmoonlight.github.io/SettingUpMcpServers
+          - Download: [todo-app-${VERSION}.tar.gz](https://github.com/${{ github.repository }}/releases/download/${VERSION}/todo-app-${VERSION}.tar.gz)
+          
+          EOF
+          
+          # Append existing changelog content (skip header)
+          if [ -f CHANGELOG.md ]; then
+            sed -n '8,$p' CHANGELOG.md >> temp_changelog.md
+          fi
+          
+          # Replace CHANGELOG.md with updated version
+          mv temp_changelog.md CHANGELOG.md
+          
+          # Commit and push changes
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add CHANGELOG.md
+          git commit -m "docs: update CHANGELOG.md for release ${VERSION}" || echo "No changelog changes to commit"
+          git push https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git main || echo "No changelog changes to push"
