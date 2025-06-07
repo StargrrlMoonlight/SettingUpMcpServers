@@ -833,6 +833,28 @@ jobs:
           echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
           
+      - name: Create and push git tag
+        run: |
+          VERSION="${{ needs.check-release-eligibility.outputs.next-version }}"
+          
+          echo "🏷️ Creating git tag: $VERSION"
+          
+          # Configure git
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          
+          # Create the tag
+          git tag -a "$VERSION" -m "Release $VERSION
+
+          - Automated release created by GitHub Actions
+          - Test Coverage: ${{ needs.test-and-build-final.outputs.coverage }}%
+          - Build Status: ✅ Success"
+          
+          # Push the tag to origin
+          git push origin "$VERSION"
+          
+          echo "✅ Git tag $VERSION created and pushed successfully"
+          
       - name: Create release archive
         run: |
           echo "📦 Creating release archives..."
