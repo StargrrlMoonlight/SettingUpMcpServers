@@ -123,11 +123,49 @@ jobs:
         npm run build
         echo "success=true" >> $GITHUB_OUTPUT
 
+    - name: Setup Chrome for accessibility testing
+      if: matrix.node-version == '20.x'  # Only setup Chrome once
+      run: |
+        echo "🔧 Setting up Chrome and ChromeDriver for accessibility testing..."
+        # Install accessibility testing dependencies
+        npm install @axe-core/cli start-server-and-test --no-save
+        
+        # Install Chrome and ChromeDriver directly
+        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+        
+        # Get Chrome version and install matching ChromeDriver
+        CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d. -f1)
+        echo "Detected Chrome version: $CHROME_VERSION"
+        
+        # Install ChromeDriver that matches Chrome version
+        npm install -g chromedriver@$CHROME_VERSION
+        
+        # Verify installations
+        echo "Chrome version: $(google-chrome --version)"
+        echo "ChromeDriver version: $(chromedriver --version)"
+        echo "Chrome binary location: $(which google-chrome)"
+        echo "ChromeDriver binary location: $(which chromedriver)"
+        
     - name: Run accessibility tests
       if: matrix.node-version == '20.x'  # Only run accessibility tests once
       run: |
         echo "🔍 Running accessibility tests on built application..."
-        npm run test:a11y
+        # Set environment variables for axe testing
+        export CHROME_BIN=$(which google-chrome)
+        export CHROMEDRIVER_BIN=$(which chromedriver)
+        echo "Using Chrome: $CHROME_BIN"
+        echo "Using ChromeDriver: $CHROMEDRIVER_BIN"
+        
+        # Test Chrome installation
+        google-chrome --version || { echo "❌ Chrome installation failed"; exit 1; }
+        chromedriver --version || { echo "❌ ChromeDriver installation failed"; exit 1; }
+        
+        # Run accessibility tests with explicit ChromeDriver path
+        echo "🚀 Starting accessibility test with axe-core..."
+        npx start-server-and-test preview http://localhost:4173 "npx @axe-core/cli http://localhost:4173 --chromedriver-path $CHROMEDRIVER_BIN --timeout 60000"
       continue-on-error: false  # Fail the workflow if accessibility tests fail
 
   #########################################################################
@@ -513,10 +551,47 @@ jobs:
         echo "✅ Final build completed successfully!"
         echo "success=true" >> $GITHUB_OUTPUT
 
+    - name: Setup Chrome for final accessibility validation
+      run: |
+        echo "🔧 Setting up Chrome and ChromeDriver for final accessibility validation..."
+        # Install accessibility testing dependencies
+        npm install @axe-core/cli start-server-and-test --no-save
+        
+        # Install Chrome and ChromeDriver directly
+        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+        
+        # Get Chrome version and install matching ChromeDriver
+        CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d. -f1)
+        echo "Detected Chrome version: $CHROME_VERSION"
+        
+        # Install ChromeDriver that matches Chrome version
+        npm install -g chromedriver@$CHROME_VERSION
+        
+        # Verify installations
+        echo "Chrome version: $(google-chrome --version)"
+        echo "ChromeDriver version: $(chromedriver --version)"
+        echo "Chrome binary location: $(which google-chrome)"
+        echo "ChromeDriver binary location: $(which chromedriver)"
+
     - name: Run final accessibility validation
       run: |
         echo "🔍 Running final accessibility validation on release build..."
-        npm run test:a11y
+        # Set environment variables for axe testing
+        export CHROME_BIN=$(which google-chrome)
+        export CHROMEDRIVER_BIN=$(which chromedriver)
+        echo "Using Chrome: $CHROME_BIN"
+        echo "Using ChromeDriver: $CHROMEDRIVER_BIN"
+        
+        # Test Chrome installation
+        google-chrome --version || { echo "❌ Chrome installation failed"; exit 1; }
+        chromedriver --version || { echo "❌ ChromeDriver installation failed"; exit 1; }
+        
+        # Run accessibility tests with explicit ChromeDriver path
+        echo "🚀 Starting final accessibility validation with axe-core..."
+        npx start-server-and-test preview http://localhost:4173 "npx @axe-core/cli http://localhost:4173 --chromedriver-path $CHROMEDRIVER_BIN --timeout 60000"
       continue-on-error: false  # Fail the workflow if accessibility tests fail
 
     # Upload artifacts for deployment stage
