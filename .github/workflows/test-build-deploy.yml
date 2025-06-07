@@ -76,9 +76,9 @@ jobs:
         npm run test:a11y
       continue-on-error: false  # Fail the workflow if accessibility tests fail
 
-  # Flow 2: Detect human merge and determine release needs (EXCLUDE automated commits)
+  # Flow 2: Detect human merge and prepare release (ALWAYS release on deployment)
   check-human-merge:
-    name: Detect Human Merge & Release Planning
+    name: Human Merge Detection & Release Preparation
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' && 
@@ -116,10 +116,11 @@ jobs:
         
         echo "✅ Confirmed: This is a human-initiated merge"
       
-    - name: Check release eligibility
+    - name: Check release requirements
       id: release-check
       run: |
-        echo "🎯 Human merge detected - checking if release is needed"
+        echo "🎯 Human merge detected - preparing release for deployment"
+        echo "🚀 Every deployment to production gets a corresponding release"
         
         LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
         echo "Latest tag: $LATEST_TAG"
@@ -132,42 +133,40 @@ jobs:
         
         echo "Commits since last tag: $COMMITS_SINCE_TAG"
         
-        if [ "$COMMITS_SINCE_TAG" -gt 0 ]; then
-          echo "should-release=true" >> $GITHUB_OUTPUT
-          
-          if [ "$LATEST_TAG" = "v0.0.0" ]; then
-            NEW_VERSION="v1.0.0"
-            echo "🎉 First release detected"
-          else
-            # Your existing version calculation logic...
-            TAG_VERSION=$(echo $LATEST_TAG | sed 's/^v//')
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$TAG_VERSION"
-            
-            COMMIT_MESSAGES=$(git log ${LATEST_TAG}..HEAD --oneline)
-            echo "🔍 Analyzing commits since $LATEST_TAG:"
-            echo "$COMMIT_MESSAGES"
-            
-            if echo "$COMMIT_MESSAGES" | grep -qiE "(BREAKING CHANGE|breaking change)"; then
-              NEW_VERSION="v$((MAJOR + 1)).0.0"
-              echo "🚨 Major version bump detected (breaking change)"
-            elif echo "$COMMIT_MESSAGES" | grep -qiE "(fix|patch)"; then
-              NEW_VERSION="v${MAJOR}.${MINOR}.$((PATCH + 1))"
-              echo "🔧 Patch version bump detected (fix or patch)"
-            else
-              NEW_VERSION="v${MAJOR}.$((MINOR + 1)).0"
-              echo "📦 Minor version bump (default for all other commits)"
-            fi
-          fi
-          
-          echo "next-version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "🎯 Next release version: $NEW_VERSION"
+        # ALWAYS create a release for any deployment to production
+        # Every deployment should be traceable and tagged
+        echo "should-release=true" >> $GITHUB_OUTPUT
+        
+        if [ "$LATEST_TAG" = "v0.0.0" ]; then
+          NEW_VERSION="v1.0.0"
+          echo "🎉 First release detected"
         else
-          echo "should-release=false" >> $GITHUB_OUTPUT
+          # Calculate version based on commit analysis
+          TAG_VERSION=$(echo $LATEST_TAG | sed 's/^v//')
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$TAG_VERSION"
+          
+          COMMIT_MESSAGES=$(git log ${LATEST_TAG}..HEAD --oneline)
+          echo "🔍 Analyzing commits since $LATEST_TAG:"
+          echo "$COMMIT_MESSAGES"
+          
+          if echo "$COMMIT_MESSAGES" | grep -qiE "(BREAKING CHANGE|breaking change)"; then
+            NEW_VERSION="v$((MAJOR + 1)).0.0"
+            echo "🚨 Major version bump detected (breaking change)"
+          elif echo "$COMMIT_MESSAGES" | grep -qiE "(fix|patch)"; then
+            NEW_VERSION="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+            echo "🔧 Patch version bump detected (fix or patch)"
+          else
+            NEW_VERSION="v${MAJOR}.$((MINOR + 1)).0"
+            echo "📦 Minor version bump (default for all other commits)"
+          fi
         fi
+        
+        echo "next-version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "🎯 Next release version: $NEW_VERSION"
 
-  # Flow 2 Continued: Production build + version update (ALWAYS fresh build)
+  # Flow 2 Continued: Production build + version update (ALWAYS for deployment)
   production-pipeline:
-    name: Production Pipeline
+    name: Production Build & Release Preparation
     runs-on: ubuntu-latest
     needs: [check-human-merge]
     if: needs.check-human-merge.result == 'success'
@@ -216,13 +215,12 @@ jobs:
         npm run build
         echo "success=true" >> $GITHUB_OUTPUT
 
-    - name: Create version update PR
+    - name: Create version update PR for release
       id: create-pr
-      if: |
-        needs.check-human-merge.outputs.should-release == 'true' &&
-        steps.build.outputs.success == 'true'
+      if: steps.build.outputs.success == 'true'
       run: |
         echo "🔄 Creating SILENT version update PR for release process"
+        echo "🚀 Every deployment requires a corresponding release version"
         
         VERSION="${{ needs.check-human-merge.outputs.next-version }}"
         CLEAN_VERSION=$(echo $VERSION | sed 's/^v//')
@@ -317,22 +315,12 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.RELEASE_PAT }}
 
-    - name: Upload production build artifacts
-      uses: actions/upload-artifact@v4
-      if: steps.build.outputs.success == 'true'
-      with:
-        name: production-build-${{ github.sha }}
-        path: dist/
-        retention-days: 30
-
   # Wait for version PR merge, then build fresh with updated files
   post-version-update-build:
-    name: Final Build with Updated Version
+    name: Final Release Build
     runs-on: ubuntu-latest
     needs: [check-human-merge, production-pipeline]
-    if: |
-      needs.production-pipeline.result == 'success' &&
-      needs.check-human-merge.outputs.should-release == 'true'
+    if: needs.production-pipeline.result == 'success'
     
     outputs:
       build-success: ${{ steps.build.outputs.success }}
@@ -429,7 +417,7 @@ jobs:
         path: dist/
         retention-days: 30
 
-  # Deploy and Release (using fresh build with updated version)
+  # Deploy and Release (always both for production deployments)
   deploy-and-release:
     name: Deploy & Release
     runs-on: ubuntu-latest
@@ -438,17 +426,14 @@ jobs:
     if: |
       github.event.head_commit.author.email != 'actions@github.com' &&
       !contains(github.event.head_commit.message, '[skip ci]') &&
-      (
-        (needs.check-human-merge.outputs.should-release == 'false' && needs.production-pipeline.outputs.build-success == 'true') ||
-        (needs.check-human-merge.outputs.should-release == 'true' && needs.post-version-update-build.outputs.build-success == 'true')
-      )
+      needs.post-version-update-build.outputs.build-success == 'true'
     
     steps:
-    # Download the appropriate build artifacts
-    - name: Download build artifacts
+    # Download the final build with updated version
+    - name: Download final build artifacts
       uses: actions/download-artifact@v4
       with:
-        name: ${{ needs.check-human-merge.outputs.should-release == 'true' && 'final-build-' || 'production-build-' }}${{ github.sha }}
+        name: final-build-${{ github.sha }}
         path: ./dist
         
     - name: Setup Pages
@@ -463,9 +448,8 @@ jobs:
       id: deployment
       uses: actions/deploy-pages@v4
 
-    # Create GitHub Release (if needed)
+    # Create GitHub Release (always for production deployments)
     - name: Create GitHub Release
-      if: needs.check-human-merge.outputs.should-release == 'true'
       run: |
         # Checkout latest main (with version updates)
         git clone https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git .
@@ -473,6 +457,9 @@ jobs:
         
         VERSION="${{ needs.check-human-merge.outputs.next-version }}"
         COVERAGE="${{ needs.production-pipeline.outputs.coverage }}"
+        
+        echo "🚀 Creating release $VERSION for production deployment"
+        echo "📊 Every deployment gets a corresponding release for traceability"
         
         # Create git tag
         git config --local user.name "GitHub Actions"
@@ -517,7 +504,6 @@ jobs:
         echo "📊 Coverage: ${{ needs.production-pipeline.outputs.coverage }}%"
         echo "🔍 Accessibility: ✅ Validated"
         echo "🌍 Live Demo: ${{ steps.deployment.outputs.page_url }}"
-        if [ "${{ needs.check-human-merge.outputs.should-release }}" = "true" ]; then
-          echo "🚀 Release ${{ needs.check-human-merge.outputs.next-version }} created with fresh build"
-          echo "🔇 Automated PRs were completely silent (no CI triggered)"
-        fi
+        echo "🚀 Release ${{ needs.check-human-merge.outputs.next-version }} created and deployed"
+        echo "🔇 Automated PRs were completely silent (no CI triggered)"
+        echo "📋 Production deployment always matches tagged release"
