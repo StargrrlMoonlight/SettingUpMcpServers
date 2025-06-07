@@ -197,11 +197,17 @@ jobs:
     # SKIP ESLint - already validated in PR
     # SKIP accessibility tests - already validated in PR
 
-    - name: Skip tests - reuse PR validation
+    - name: Run tests for coverage extraction
       run: |
-        echo "⚡ Skipping test execution - results already validated in PR"
-        echo "📊 Using placeholder coverage for release documentation"
-        echo "coverage=95.0" >> $GITHUB_OUTPUT  # Could extract from PR API
+        echo "📊 Running tests to extract actual coverage for release documentation"
+        npm run test:ci
+
+    - name: Extract actual coverage percentage
+      id: get-coverage
+      run: |
+        COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+        echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+        echo "📊 Actual test coverage: $COVERAGE%"
 
     - name: Build application
       id: build
