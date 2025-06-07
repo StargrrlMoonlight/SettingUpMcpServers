@@ -216,7 +216,6 @@ jobs:
         npm run build
         echo "success=true" >> $GITHUB_OUTPUT
 
-    # Version update PR creation (only for Node 20.x and if release needed)
     - name: Create version update PR
       id: create-pr
       if: |
