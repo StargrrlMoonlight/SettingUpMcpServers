@@ -180,10 +180,8 @@ jobs:
             
             # Determine which version to use as baseline
             # Use set +e to prevent the script from exiting on non-zero return codes
-            set +e
-            compare_versions "$PKG_VERSION" "$TAG_VERSION"
+            compare_versions "$PKG_VERSION" "$TAG_VERSION" || true
             VERSION_COMPARISON=$?
-            set -e
             
             if [ $VERSION_COMPARISON -eq 1 ]; then
               # Package.json version is higher - use it as baseline
