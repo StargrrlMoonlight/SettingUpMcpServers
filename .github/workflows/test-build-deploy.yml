@@ -362,7 +362,7 @@ jobs:
           # Update README.md - replace existing coverage badge or add new one
           if grep -q "!\[Coverage\]" README.md; then
             # Replace existing coverage badge
-            sed -i "s/!\[Coverage\][^)]*/|$NEW_BADGE|g" README.md
+            sed -i "s|!\[Coverage\][^)]*|$NEW_BADGE|g" README.md
             echo "✅ Updated existing coverage badge"
           else
             # Add coverage badge after title (assuming # Title is first line)
