@@ -310,7 +310,7 @@ jobs:
         cache: 'npm'
         
     - name: Install dependencies
-      run: npm ci
+      run: npm install
 
     # OPTIMIZATION: Skip ESLint and accessibility - already validated in PR Flow 1
     # This saves ~2-3 minutes per run while maintaining same quality standards
@@ -540,7 +540,7 @@ jobs:
         cache: 'npm'
         
     - name: Install dependencies
-      run: npm ci
+      run: npm install
 
     - name: Build application with updated version
       id: build
