@@ -119,6 +119,10 @@ jobs:
         LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
         echo "Latest tag: $LATEST_TAG"
         
+        # Get current package.json version
+        CURRENT_PKG_VERSION=$(node -p "require('./package.json').version")
+        echo "Current package.json version: $CURRENT_PKG_VERSION"
+        
         # Check if there are any commits since the last tag
         if [ "$LATEST_TAG" = "v0.0.0" ]; then
           COMMITS_SINCE_TAG=1
@@ -131,16 +135,75 @@ jobs:
         if [ "$COMMITS_SINCE_TAG" -gt 0 ]; then
           echo "should-release=true" >> $GITHUB_OUTPUT
           
-          # Extract version number without 'v' prefix
-          VERSION=$(echo $LATEST_TAG | sed 's/^v//')
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          
-          # Check commit messages since last tag for semantic versioning
+          # Extract version numbers for comparison
           if [ "$LATEST_TAG" = "v0.0.0" ]; then
             # First release
             NEW_VERSION="v1.0.0"
             echo "🎉 First release detected"
           else
+            # Compare git tag version vs package.json version and use the higher one as baseline
+            TAG_VERSION=$(echo $LATEST_TAG | sed 's/^v//')
+            PKG_VERSION="$CURRENT_PKG_VERSION"
+            
+            echo "🔍 Comparing versions:"
+            echo "  Git tag version: $TAG_VERSION"
+            echo "  Package.json version: $PKG_VERSION"
+            
+            # Function to compare versions (returns 0 if equal, 1 if first > second, 2 if first < second)
+            compare_versions() {
+              if [ "$1" = "$2" ]; then
+                return 0
+              fi
+              
+              local v1=$(echo "$1" | tr '.' ' ')
+              local v2=$(echo "$2" | tr '.' ' ')
+              
+              local major1=$(echo $v1 | awk '{print $1}')
+              local minor1=$(echo $v1 | awk '{print $2}')
+              local patch1=$(echo $v1 | awk '{print $3}')
+              
+              local major2=$(echo $v2 | awk '{print $1}')
+              local minor2=$(echo $v2 | awk '{print $2}')
+              local patch2=$(echo $v2 | awk '{print $3}')
+              
+              if [ "$major1" -gt "$major2" ]; then return 1; fi
+              if [ "$major1" -lt "$major2" ]; then return 2; fi
+              
+              if [ "$minor1" -gt "$minor2" ]; then return 1; fi
+              if [ "$minor1" -lt "$minor2" ]; then return 2; fi
+              
+              if [ "$patch1" -gt "$patch2" ]; then return 1; fi
+              if [ "$patch1" -lt "$patch2" ]; then return 2; fi
+              
+              return 0
+            }
+            
+            # Determine which version to use as baseline
+            compare_versions "$PKG_VERSION" "$TAG_VERSION"
+            VERSION_COMPARISON=$?
+            
+            if [ $VERSION_COMPARISON -eq 1 ]; then
+              # Package.json version is higher - use it as baseline
+              echo "📈 Package.json version ($PKG_VERSION) is ahead of git tag ($TAG_VERSION)"
+              echo "   Using package.json version as baseline"
+              BASELINE_VERSION="$PKG_VERSION"
+            elif [ $VERSION_COMPARISON -eq 2 ]; then
+              # Git tag version is higher - use it as baseline  
+              echo "📈 Git tag version ($TAG_VERSION) is ahead of package.json ($PKG_VERSION)"
+              echo "   Using git tag version as baseline"
+              BASELINE_VERSION="$TAG_VERSION"
+            else
+              # Versions are equal - use either one
+              echo "⚖️  Versions are equal ($TAG_VERSION = $PKG_VERSION)"
+              echo "   Using git tag version as baseline"
+              BASELINE_VERSION="$TAG_VERSION"
+            fi
+            
+            echo "🎯 Baseline version for calculation: $BASELINE_VERSION"
+            
+            # Parse baseline version for increment calculation
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$BASELINE_VERSION"
+            
             # Get commit messages for analysis (with debug output)
             COMMIT_MESSAGES=$(git log ${LATEST_TAG}..HEAD --oneline)
             echo "🔍 Analyzing commits since $LATEST_TAG:"
@@ -150,7 +213,7 @@ jobs:
             if echo "$COMMIT_MESSAGES" | grep -qiE "(BREAKING CHANGE|breaking change)"; then
               # Major version bump for breaking changes (highest precedence)
               NEW_VERSION="v$((MAJOR + 1)).0.0"
-              echo "📈 Major version bump detected (breaking change)"
+              echo "🚨 Major version bump detected (breaking change)"
             elif echo "$COMMIT_MESSAGES" | grep -qiE "(fix|patch)"; then
               # Patch version bump for fixes (only if no breaking changes)
               NEW_VERSION="v${MAJOR}.${MINOR}.$((PATCH + 1))"
@@ -257,8 +320,19 @@ jobs:
           # Remove 'v' prefix for package.json
           CLEAN_VERSION=$(echo $VERSION | sed 's/^v//')
           
-          echo "Updating package.json version to: $CLEAN_VERSION"
-          npm version $CLEAN_VERSION --no-git-tag-version
+          # Get current package.json version to compare
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          echo "Current package.json version: $CURRENT_VERSION"
+          echo "Target version: $CLEAN_VERSION"
+          
+          # Only update if versions are different
+          if [ "$CURRENT_VERSION" != "$CLEAN_VERSION" ]; then
+            echo "Updating package.json version to: $CLEAN_VERSION"
+            npm version $CLEAN_VERSION --no-git-tag-version
+          else
+            echo "ℹ️  Package.json already at target version $CLEAN_VERSION, skipping npm version update"
+          fi
           
       - name: Update coverage badge in README.md
         run: |
@@ -288,7 +362,7 @@ jobs:
           # Update README.md - replace existing coverage badge or add new one
           if grep -q "!\[Coverage\]" README.md; then
             # Replace existing coverage badge
-            sed -i "s|!\[Coverage\][^)]*)|$NEW_BADGE|g" README.md
+            sed -i "s/!\[Coverage\][^)]*/|$NEW_BADGE|g" README.md
             echo "✅ Updated existing coverage badge"
           else
             # Add coverage badge after title (assuming # Title is first line)
@@ -657,7 +731,7 @@ jobs:
       - name: Production Health Check
         run: |
           echo "🚀 Production deployment complete!"
-          echo "📍 Production URL: ${{ steps.deployment.outputs.page_url }}"
+          echo "🌍 Production URL: ${{ steps.deployment.outputs.page_url }}"
           
           # Basic health check
           echo "Performing production health check..."
@@ -702,7 +776,7 @@ jobs:
           # Verify we have the updated package.json version
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           EXPECTED_VERSION=$(echo "${{ needs.check-release-eligibility.outputs.next-version }}" | sed 's/^v//')
-          
+        
           echo "Current package.json version: $CURRENT_VERSION"
           echo "Expected version: $EXPECTED_VERSION"
           
