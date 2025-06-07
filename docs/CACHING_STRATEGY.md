@@ -71,6 +71,20 @@ Your CI/CD workflow implements a sophisticated multi-layered caching system that
 
 ## Troubleshooting
 
+### Common Caching Issues
+
+#### "Dependencies lock file is not found" Error
+**Error**: `Dependencies lock file is not found in /home/runner/work/SettingUpMcpServers/SettingUpMcpServers. Supported file patterns: package-lock.json,npm-shrinkwrap.json,yarn.lock`
+
+**Cause**: This occurs when `package-lock.json` is missing from the repository but GitHub Actions `setup-node` is configured with `cache: 'npm'`.
+
+**Solution**:
+1. **Regenerate lock file**: Run `npm install` locally to create `package-lock.json`
+2. **Commit the lock file**: Add and commit the generated lock file
+3. **Verify workflow**: Ensure all npm cache configurations are restored
+
+**Prevention**: Always commit `package-lock.json` to ensure consistent dependency resolution across environments.
+
 ### When to Clear Caches
 1. **Security Updates**: Major dependency security patches
 2. **Build Environment Issues**: If cache corruption suspected
