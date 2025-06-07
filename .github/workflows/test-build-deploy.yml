@@ -25,14 +25,11 @@ permissions:
 # 1. Go to GitHub Settings → Developer settings → Personal access tokens
 # 2. Generate new token with 'repo' and 'workflow' scopes
 # 3. Add as repository secret named 'RELEASE_PAT'
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
 
 jobs:
   # Basic test and build job that runs for all events to provide status checks
   test-and-build:
-    name: Test & Build
+    name: Initial Test & Build
     runs-on: ubuntu-latest
     
     outputs:
@@ -56,6 +53,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
+    - name: Run ESLint
+      run: npm run lint
+
     - name: Run tests with coverage
       run: npm run test:ci
       
@@ -72,27 +72,6 @@ jobs:
       run: |
         npm run build
         echo "success=true" >> $GITHUB_OUTPUT
-
-  # Lint job for code quality checks
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Run ESLint
-      run: npm run lint
 
   check-release-eligibility:
     name: Check Release Eligibility
@@ -233,47 +212,10 @@ jobs:
           echo "No new commits since last tag, skipping release"
         fi
 
-  test-and-build-for-version:
-    name: Test & Build for Version Updates
-    runs-on: ubuntu-latest
-    needs: [check-release-eligibility]
-    if: needs.check-release-eligibility.outputs.should-release == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
-    outputs:
-      coverage: ${{ steps.coverage.outputs.coverage || '0' }}
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
-        persist-credentials: true
-        
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Run tests with coverage
-      run: npm run test:ci
-      
-    - name: Extract coverage percentage
-      id: coverage
-      run: |
-        # Extract coverage percentage from the coverage summary
-        COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
-        echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
-        echo "📊 Test coverage: $COVERAGE%"
-
   update-version-files:
     name: Update Version Files
     runs-on: ubuntu-latest
-    needs: [check-release-eligibility, test-and-build-for-version]
+    needs: [check-release-eligibility, test-and-build]
     if: needs.check-release-eligibility.outputs.should-release == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     outputs:
@@ -337,7 +279,7 @@ jobs:
           
       - name: Update coverage badge in README.md
         run: |
-          COVERAGE="${{ needs.test-and-build-for-version.outputs.coverage }}"
+          COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
           
           echo "📊 Updating coverage badge to: $COVERAGE%"
           
@@ -376,7 +318,7 @@ jobs:
       - name: Generate CHANGELOG.md
         run: |
           VERSION="${{ needs.check-release-eligibility.outputs.next-version }}"
-          COVERAGE="${{ needs.test-and-build-for-version.outputs.coverage }}"
+          COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           
           echo "# Changelog" > CHANGELOG.md
@@ -432,7 +374,7 @@ jobs:
       - name: Commit version updates
         run: |
           VERSION="${{ needs.check-release-eligibility.outputs.next-version }}"
-          COVERAGE="${{ needs.test-and-build-for-version.outputs.coverage }}"
+          COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
           BRANCH_NAME="${{ steps.create-branch.outputs.branch-name }}"
           
           # Add the updated files
@@ -453,7 +395,7 @@ jobs:
         id: create-pr
         run: |
           VERSION="${{ needs.check-release-eligibility.outputs.next-version }}"
-          COVERAGE="${{ needs.test-and-build-for-version.outputs.coverage }}"
+          COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
           BRANCH_NAME="${{ steps.create-branch.outputs.branch-name }}"
           
           # Push release branch to origin
@@ -543,7 +485,7 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
 
   test-and-build-final:
-    name: Final Test & Build
+    name: Post-Merge Test & Build
     runs-on: ubuntu-latest
     needs: [check-release-eligibility, update-version-files]
     # Run for all commits, but wait for version updates if it's a release
@@ -560,7 +502,6 @@ jobs:
         node-version: [18.x, 20.x]
     
     outputs:
-      coverage: ${{ steps.coverage.outputs.coverage || '0' }}
       build-success: ${{ steps.build.outputs.success || 'false' }}
     
     steps:
@@ -627,15 +568,6 @@ jobs:
       
     - name: Run tests with coverage
       run: npm run test:ci
-      
-    - name: Extract coverage percentage
-      if: matrix.node-version == '20.x'
-      id: coverage
-      run: |
-        # Extract coverage percentage from the coverage summary
-        COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
-        echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
-        echo "📊 Final test coverage: $COVERAGE%"
       
     - name: Build application
       id: build
@@ -706,6 +638,11 @@ jobs:
     needs: [test-and-build-final, accessibility]
     # Run if test-and-build-final succeeds AND either accessibility succeeds or is skipped
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.event.head_commit.author.email != 'actions@github.com' && needs.test-and-build-final.outputs.build-success == 'true' && (needs.accessibility.result == 'success' || needs.accessibility.result == 'skipped')
+    
+    concurrency:
+      group: "pages-deployment"
+      cancel-in-progress: false
+
     environment:
       name: production
       url: ${{ steps.deployment.outputs.page_url }}
@@ -750,6 +687,10 @@ jobs:
     needs: [check-release-eligibility, update-version-files, test-and-build-final]
     if: needs.check-release-eligibility.outputs.should-release == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.test-and-build-final.outputs.build-success == 'true'
     
+    concurrency:
+      group: "github-release"
+      cancel-in-progress: false
+      
     steps:
       - name: Wait for version updates to be merged
         if: needs.update-version-files.outputs.pr-created == 'true'
