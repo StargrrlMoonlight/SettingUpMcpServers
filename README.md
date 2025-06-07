@@ -1,7 +1,7 @@
 # Executive Manager - Elegant Task Management
 
 ![Test & Deploy](https://github.com/StargrrlMoonlight/SettingUpMcpServers/actions/workflows/test-build-deploy.yml/badge.svg?branch=main)
-![Coverage](https://img.shields.io/badge/coverage-92.83%25-brightgreen)))
+![Coverage](https://img.shields.io/badge/coverage-92.83%25-brightgreen))))
 [![code style: eslint](https://img.shields.io/badge/code%20style-eslint-blue.svg)](https://eslint.org/)
 
 A sophisticated task management web application built with React and Vite, featuring an exclusive high-end design with neutral light colors and elegant dark typography.
