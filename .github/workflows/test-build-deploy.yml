@@ -115,35 +115,91 @@ jobs:
       if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.event.head_commit.author.email != 'actions@github.com'
       id: release-check
       run: |
-        # Get the latest tag to determine next version
-        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-        echo "Latest tag: $LATEST_TAG"
+        # Function to compare semantic versions
+        compare_versions() {
+          local v1=$1
+          local v2=$2
+          
+          # Remove 'v' prefix if present and split into components
+          v1_clean=$(echo "$v1" | sed 's/^v//')
+          v2_clean=$(echo "$v2" | sed 's/^v//')
+          
+          # Split versions into major.minor.patch
+          IFS='.' read -r v1_major v1_minor v1_patch <<< "$v1_clean"
+          IFS='.' read -r v2_major v2_minor v2_patch <<< "$v2_clean"
+          
+          # Default unset parts to 0
+          v1_major=${v1_major:-0}; v1_minor=${v1_minor:-0}; v1_patch=${v1_patch:-0}
+          v2_major=${v2_major:-0}; v2_minor=${v2_minor:-0}; v2_patch=${v2_patch:-0}
+          
+          # Compare versions
+          if [ "$v1_major" -gt "$v2_major" ]; then echo "1"
+          elif [ "$v1_major" -lt "$v2_major" ]; then echo "-1"
+          elif [ "$v1_minor" -gt "$v2_minor" ]; then echo "1"
+          elif [ "$v1_minor" -lt "$v2_minor" ]; then echo "-1"
+          elif [ "$v1_patch" -gt "$v2_patch" ]; then echo "1"
+          elif [ "$v1_patch" -lt "$v2_patch" ]; then echo "-1"
+          else echo "0"
+          fi
+        }
         
-        # Check if there are any commits since the last tag
-        if [ "$LATEST_TAG" = "v0.0.0" ]; then
-          COMMITS_SINCE_TAG=1
+        # Get the latest tag and current package.json version
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        CURRENT_PKG_VERSION="v$(node -p "require('./package.json').version")"
+        
+        echo "Latest git tag: $LATEST_TAG"
+        echo "Current package.json version: $CURRENT_PKG_VERSION"
+        
+        # Compare versions to determine baseline
+        VERSION_COMPARISON=$(compare_versions "$CURRENT_PKG_VERSION" "$LATEST_TAG")
+        
+        if [ "$VERSION_COMPARISON" -gt 0 ]; then
+          echo "📦 Package.json version ($CURRENT_PKG_VERSION) is ahead of git tag ($LATEST_TAG)"
+          echo "🎯 Using package.json version as baseline for next version calculation"
+          BASELINE_VERSION="$CURRENT_PKG_VERSION"
         else
-          COMMITS_SINCE_TAG=$(git rev-list ${LATEST_TAG}..HEAD --count)
+          echo "🏷️ Git tag version ($LATEST_TAG) is current or ahead"
+          echo "🎯 Using git tag as baseline for next version calculation"
+          BASELINE_VERSION="$LATEST_TAG"
         fi
         
-        echo "Commits since last tag: $COMMITS_SINCE_TAG"
+        # Check if there are any commits since the baseline tag
+        if [ "$BASELINE_VERSION" = "v0.0.0" ]; then
+          COMMITS_SINCE_TAG=1
+        else
+          # If using package.json version as baseline, count all commits since last tag
+          if [ "$VERSION_COMPARISON" -gt 0 ]; then
+            COMMITS_SINCE_TAG=$(git rev-list ${LATEST_TAG}..HEAD --count)
+          else
+            COMMITS_SINCE_TAG=$(git rev-list ${BASELINE_VERSION}..HEAD --count)
+          fi
+        fi
+        
+        echo "Commits since baseline version ($BASELINE_VERSION): $COMMITS_SINCE_TAG"
         
         if [ "$COMMITS_SINCE_TAG" -gt 0 ]; then
           echo "should-release=true" >> $GITHUB_OUTPUT
           
           # Extract version number without 'v' prefix
-          VERSION=$(echo $LATEST_TAG | sed 's/^v//')
+          VERSION=$(echo $BASELINE_VERSION | sed 's/^v//')
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
           
-          # Check commit messages since last tag for semantic versioning
-          if [ "$LATEST_TAG" = "v0.0.0" ]; then
+          # Check commit messages since baseline for semantic versioning
+          if [ "$BASELINE_VERSION" = "v0.0.0" ]; then
             # First release
             NEW_VERSION="v1.0.0"
             echo "🎉 First release detected"
           else
             # Get commit messages for analysis (with debug output)
-            COMMIT_MESSAGES=$(git log ${LATEST_TAG}..HEAD --oneline)
-            echo "🔍 Analyzing commits since $LATEST_TAG:"
+            if [ "$VERSION_COMPARISON" -gt 0 ]; then
+              # When package.json is ahead, analyze commits since last git tag
+              COMMIT_MESSAGES=$(git log ${LATEST_TAG}..HEAD --oneline)
+              echo "🔍 Analyzing commits since last git tag $LATEST_TAG (package.json ahead scenario):"
+            else
+              # Normal case - analyze commits since baseline tag
+              COMMIT_MESSAGES=$(git log ${BASELINE_VERSION}..HEAD --oneline)
+              echo "🔍 Analyzing commits since $BASELINE_VERSION:"
+            fi
             echo "$COMMIT_MESSAGES"
             
             # Version bumping with proper precedence - breaking changes always win
@@ -166,7 +222,7 @@ jobs:
           echo "🎯 Next release version: $NEW_VERSION"
         else
           echo "should-release=false" >> $GITHUB_OUTPUT
-          echo "No new commits since last tag, skipping release"
+          echo "No new commits since baseline version, skipping release"
         fi
 
   test-and-build-for-version:
