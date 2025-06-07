@@ -25,9 +25,6 @@ permissions:
 # 1. Go to GitHub Settings → Developer settings → Personal access tokens
 # 2. Generate new token with 'repo' and 'workflow' scopes
 # 3. Add as repository secret named 'RELEASE_PAT'
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
 
 jobs:
   # Basic test and build job that runs for all events to provide status checks
@@ -56,6 +53,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
+    - name: Run ESLint
+      run: npm run lint
+
     - name: Run tests with coverage
       run: npm run test:ci
       
@@ -72,27 +72,6 @@ jobs:
       run: |
         npm run build
         echo "success=true" >> $GITHUB_OUTPUT
-
-  # Lint job for code quality checks
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Run ESLint
-      run: npm run lint
 
   check-release-eligibility:
     name: Check Release Eligibility
@@ -659,6 +638,11 @@ jobs:
     needs: [test-and-build-final, accessibility]
     # Run if test-and-build-final succeeds AND either accessibility succeeds or is skipped
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.event.head_commit.author.email != 'actions@github.com' && needs.test-and-build-final.outputs.build-success == 'true' && (needs.accessibility.result == 'success' || needs.accessibility.result == 'skipped')
+    
+    concurrency:
+      group: "pages-deployment"
+      cancel-in-progress: false
+
     environment:
       name: production
       url: ${{ steps.deployment.outputs.page_url }}
@@ -703,6 +687,10 @@ jobs:
     needs: [check-release-eligibility, update-version-files, test-and-build-final]
     if: needs.check-release-eligibility.outputs.should-release == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.test-and-build-final.outputs.build-success == 'true'
     
+    concurrency:
+      group: "github-release"
+      cancel-in-progress: false
+      
     steps:
       - name: Wait for version updates to be merged
         if: needs.update-version-files.outputs.pr-created == 'true'
