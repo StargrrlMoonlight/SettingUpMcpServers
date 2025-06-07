@@ -32,7 +32,7 @@ concurrency:
 jobs:
   # Basic test and build job that runs for all events to provide status checks
   test-and-build:
-    name: Test & Build
+    name: Initial Test & Build
     runs-on: ubuntu-latest
     
     outputs:
@@ -233,47 +233,10 @@ jobs:
           echo "No new commits since last tag, skipping release"
         fi
 
-  test-and-build-for-version:
-    name: Test & Build for Version Updates
-    runs-on: ubuntu-latest
-    needs: [check-release-eligibility]
-    if: needs.check-release-eligibility.outputs.should-release == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
-    outputs:
-      coverage: ${{ steps.coverage.outputs.coverage || '0' }}
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
-        persist-credentials: true
-        
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Run tests with coverage
-      run: npm run test:ci
-      
-    - name: Extract coverage percentage
-      id: coverage
-      run: |
-        # Extract coverage percentage from the coverage summary
-        COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
-        echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
-        echo "📊 Test coverage: $COVERAGE%"
-
   update-version-files:
     name: Update Version Files
     runs-on: ubuntu-latest
-    needs: [check-release-eligibility, test-and-build-for-version]
+    needs: [check-release-eligibility, test-and-build]
     if: needs.check-release-eligibility.outputs.should-release == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     outputs:
@@ -337,7 +300,7 @@ jobs:
           
       - name: Update coverage badge in README.md
         run: |
-          COVERAGE="${{ needs.test-and-build-for-version.outputs.coverage }}"
+          COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
           
           echo "📊 Updating coverage badge to: $COVERAGE%"
           
@@ -376,7 +339,7 @@ jobs:
       - name: Generate CHANGELOG.md
         run: |
           VERSION="${{ needs.check-release-eligibility.outputs.next-version }}"
-          COVERAGE="${{ needs.test-and-build-for-version.outputs.coverage }}"
+          COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           
           echo "# Changelog" > CHANGELOG.md
@@ -432,7 +395,7 @@ jobs:
       - name: Commit version updates
         run: |
           VERSION="${{ needs.check-release-eligibility.outputs.next-version }}"
-          COVERAGE="${{ needs.test-and-build-for-version.outputs.coverage }}"
+          COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
           BRANCH_NAME="${{ steps.create-branch.outputs.branch-name }}"
           
           # Add the updated files
@@ -453,7 +416,7 @@ jobs:
         id: create-pr
         run: |
           VERSION="${{ needs.check-release-eligibility.outputs.next-version }}"
-          COVERAGE="${{ needs.test-and-build-for-version.outputs.coverage }}"
+          COVERAGE="${{ needs.test-and-build.outputs.coverage }}"
           BRANCH_NAME="${{ steps.create-branch.outputs.branch-name }}"
           
           # Push release branch to origin
@@ -543,7 +506,7 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
 
   test-and-build-final:
-    name: Final Test & Build
+    name: Post-Merge Test & Build
     runs-on: ubuntu-latest
     needs: [check-release-eligibility, update-version-files]
     # Run for all commits, but wait for version updates if it's a release
@@ -560,7 +523,6 @@ jobs:
         node-version: [18.x, 20.x]
     
     outputs:
-      coverage: ${{ steps.coverage.outputs.coverage || '0' }}
       build-success: ${{ steps.build.outputs.success || 'false' }}
     
     steps:
@@ -627,15 +589,6 @@ jobs:
       
     - name: Run tests with coverage
       run: npm run test:ci
-      
-    - name: Extract coverage percentage
-      if: matrix.node-version == '20.x'
-      id: coverage
-      run: |
-        # Extract coverage percentage from the coverage summary
-        COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
-        echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
-        echo "📊 Final test coverage: $COVERAGE%"
       
     - name: Build application
       id: build
