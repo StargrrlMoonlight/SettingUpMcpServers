@@ -257,8 +257,20 @@ jobs:
           # Remove 'v' prefix for package.json
           CLEAN_VERSION=$(echo $VERSION | sed 's/^v//')
           
-          echo "Updating package.json version to: $CLEAN_VERSION"
-          npm version $CLEAN_VERSION --no-git-tag-version
+          # Get current version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          echo "🔍 Current package.json version: $CURRENT_VERSION"
+          echo "🎯 Target version: $CLEAN_VERSION"
+          
+          # Only update if versions are different
+          if [ "$CURRENT_VERSION" != "$CLEAN_VERSION" ]; then
+            echo "📦 Updating package.json version to: $CLEAN_VERSION"
+            npm version $CLEAN_VERSION --no-git-tag-version
+            echo "✅ Version updated successfully"
+          else
+            echo "✅ Package.json already at target version $CLEAN_VERSION - no update needed"
+          fi
           
       - name: Update coverage badge in README.md
         run: |
