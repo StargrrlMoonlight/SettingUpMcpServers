@@ -179,7 +179,8 @@ jobs:
             }
             
             # Determine which version to use as baseline
-            compare_versions "$PKG_VERSION" "$TAG_VERSION"
+            # Use set +e to prevent the script from exiting on non-zero return codes
+            compare_versions "$PKG_VERSION" "$TAG_VERSION" || true
             VERSION_COMPARISON=$?
             
             if [ $VERSION_COMPARISON -eq 1 ]; then
