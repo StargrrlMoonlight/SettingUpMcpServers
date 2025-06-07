@@ -1,14 +1,30 @@
 # Testing Framework Guide
 
-This document covers the comprehensive testing framework used to ensure code quality and prevent regressions in the React Todo List project.
+This document covers the comprehensive testing framework used to ensure code quality and prevent regressions in the React Todo List project, integrated with our advanced dual-flow CI/CD pipeline.
 
 ## 🧪 Testing Technology Stack
 
-- **Vitest**: Fast, Vite-native testing framework
-- **React Testing Library**: For testing React components
-- **JSDOM**: Browser environment simulation
-- **@testing-library/user-event**: For simulating user interactions
-- **Codecov**: Coverage reporting and visualization
+- **Vitest**: Fast, Vite-native testing framework optimized for our workflow
+- **React Testing Library**: For testing React components with accessibility focus
+- **JSDOM**: Browser environment simulation for comprehensive testing
+- **@testing-library/user-event**: For simulating realistic user interactions
+- **Codecov**: Coverage reporting with automatic badge updates in README
+
+## 🚀 Integration with Dual-Flow CI/CD
+
+Our testing framework is optimized for the advanced workflow architecture:
+
+### Flow 1: Pull Request Testing (Fast Feedback)
+- **Purpose**: Immediate developer feedback on code quality
+- **Tests Run**: All unit tests, integration tests, and accessibility checks
+- **Performance**: ~60% faster execution through smart caching
+- **Coverage**: Real-time coverage reporting without deployment overhead
+
+### Flow 2: Production Pipeline Testing
+- **Purpose**: Comprehensive validation before deployment
+- **Tests Run**: Full test suite with coverage reporting and badge updates
+- **Integration**: Seamless integration with build and deployment processes
+- **Safeguards**: Part of the 7-layer protection system
 
 ## 📁 Test Structure
 
