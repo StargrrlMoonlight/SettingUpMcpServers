@@ -675,7 +675,7 @@ jobs:
         git push origin "$VERSION"
         
         # Generate comprehensive changelog
-        LATEST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
         
         if [ -z "$LATEST_TAG" ]; then
           echo "No previous tags found, generating changelog from first commit"
