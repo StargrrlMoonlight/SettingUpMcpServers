@@ -655,7 +655,9 @@ jobs:
     # POLICY: Every deployment must have a corresponding tagged release for traceability
     - name: Create GitHub Release
       run: |
-        # Checkout latest main (with version updates)
+        # Checkout latest main (with version updates) to a clean directory
+        mkdir -p repo-checkout
+        cd repo-checkout
         git clone https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git .
         git checkout main
         
@@ -672,18 +674,41 @@ jobs:
         git tag -a "$VERSION" -m "Release $VERSION"
         git push origin "$VERSION"
         
-        # Create release archives from final build artifacts
+        # Generate comprehensive changelog
+        LATEST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+        
+        if [ -z "$LATEST_TAG" ]; then
+          echo "No previous tags found, generating changelog from first commit"
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+        else
+          echo "Generating changelog since tag: $LATEST_TAG"
+          CHANGELOG=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+        fi
+        
+        # Create release archives from final build artifacts (in parent directory)
         # Provides downloadable packages for users and backup purposes
-        cd dist
-        tar -czf ../todo-app-$VERSION.tar.gz .
-        zip -r ../todo-app-$VERSION.zip .
         cd ..
+        mkdir -p release-package
+        cp -r dist/* release-package/
+        cp repo-checkout/package.json release-package/
+        cp repo-checkout/README.md release-package/
+        cp repo-checkout/LICENSE* release-package/ 2>/dev/null || echo "No LICENSE file found"
+        
+        # Create standardized archives
+        tar -czf todo-app-$VERSION.tar.gz -C release-package .
+        zip -r todo-app-$VERSION.zip release-package/
         
         # Create comprehensive GitHub release with quality metrics
         # Includes coverage data, accessibility validation, and live demo link
+        cd repo-checkout
         gh release create "$VERSION" \
           --title "Release $VERSION" \
-          --notes "🚀 Automated release with ${COVERAGE}% test coverage
+          --notes "# Todo App Release $VERSION
+
+        🚀 Automated release with ${COVERAGE}% test coverage
+
+        ## Changes
+        $CHANGELOG
 
         ## 📊 Quality Metrics
         - Test Coverage: ${COVERAGE}%
@@ -697,10 +722,16 @@ jobs:
         ## 🌐 Live Demo
         [View Live Demo](${{ steps.deployment.outputs.page_url }})
 
-        **Full Changelog**: https://github.com/${{ github.repository }}/compare/$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo 'initial')...$VERSION" \
+        ## 📦 Installation
+
+        1. Download the release archive
+        2. Extract the files
+        3. Serve the \`dist\` folder with any web server
+
+        **Full Changelog**: https://github.com/${{ github.repository }}/compare/$LATEST_TAG...$VERSION" \
           --latest \
-          todo-app-$VERSION.tar.gz \
-          todo-app-$VERSION.zip
+          ../todo-app-$VERSION.tar.gz \
+          ../todo-app-$VERSION.zip
           
       env:
         GH_TOKEN: ${{ secrets.RELEASE_PAT }}
