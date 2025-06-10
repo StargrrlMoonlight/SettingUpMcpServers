@@ -1,6 +1,7 @@
 import './App.css'
 import TodoList from './components/TodoList'
 import Header from './components/Header'
+import AIDayPlanner from './components/AIDayPlanner'
 import SaveIndicator from './components/SaveIndicator'
 import useLocalStorage from './hooks/useLocalStorage'
 import { STORAGE_KEYS, clearAllData, exportData, importData } from './utils/localStorage'
@@ -119,6 +120,7 @@ Example usage:
       <div className="app">
         <div className="container">
           <Header />
+          <AIDayPlanner />
           <TodoList
             todos={migratedTodos}
             onAddTodo={addTodo}
