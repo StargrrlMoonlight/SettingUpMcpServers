@@ -7,6 +7,12 @@
 
 .add-todo-row {
   display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.add-todo-controls {
+  display: flex;
   gap: 1rem;
   align-items: center;
 }
@@ -35,15 +41,17 @@
   color: var(--color-primary);
   transition: all 0.2s ease;
   box-shadow: var(--shadow-light);
-  min-width: 120px;
 }
 
 .priority-select {
   cursor: pointer;
+  flex: 1;
+  min-width: 120px;
 }
 
 .due-date-input {
   min-width: 140px;
+  flex-shrink: 0;
 }
 
 .add-todo-input:focus,
@@ -51,7 +59,7 @@
 .due-date-input:focus {
   outline: none;
   border-color: var(--color-secondary);
-  box-shadow: 
+  box-shadow:
     0 0 0 3px rgba(108, 117, 125, 0.1),
     var(--shadow-light);
 }
@@ -74,6 +82,8 @@
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 100px;
 }
 
 .add-todo-btn:hover {
@@ -91,18 +101,18 @@
   .add-todo {
     padding: 1.5rem;
   }
-  
-  .add-todo-row {
+
+  .add-todo-controls {
     flex-direction: column;
     gap: 0.75rem;
   }
-  
-  .add-todo-input,
+
   .priority-select,
   .due-date-input,
   .add-todo-btn {
     width: 100%;
     min-width: unset;
+    flex: none;
   }
 }
 
@@ -119,7 +129,7 @@
   background: rgba(26, 13, 46, 0.6);
   border: 2px solid rgba(0, 212, 255, 0.3);
   color: var(--color-primary);
-  box-shadow: 
+  box-shadow:
     0 0 10px rgba(0, 212, 255, 0.1),
     inset 0 0 20px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(5px);
@@ -129,7 +139,7 @@
 [data-theme="vibe"] .priority-select:focus,
 [data-theme="vibe"] .due-date-input:focus {
   border-color: var(--color-electric-blue);
-  box-shadow: 
+  box-shadow:
     0 0 20px rgba(0, 212, 255, 0.4),
     0 0 0 3px rgba(0, 212, 255, 0.1),
     inset 0 0 20px rgba(0, 0, 0, 0.2);
@@ -146,7 +156,7 @@
   border: 1px solid rgba(0, 212, 255, 0.5);
   color: white;
   text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
-  box-shadow: 
+  box-shadow:
     0 4px 15px rgba(184, 69, 255, 0.3),
     0 0 20px rgba(0, 212, 255, 0.2);
   animation: var(--animation-glow);
@@ -155,7 +165,7 @@
 [data-theme="vibe"] .add-todo-btn:hover {
   background: linear-gradient(135deg, var(--color-electric-blue), var(--color-laser-green));
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 
+  box-shadow:
     0 6px 25px rgba(0, 212, 255, 0.4),
     0 0 30px rgba(0, 255, 136, 0.3);
 }

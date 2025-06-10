@@ -27,26 +27,28 @@ function AddTodo({ onAddTodo }) {
           onChange={(e) => setText(e.target.value)}
           aria-label="Add new task"
         />
-        <select
-          className="priority-select"
-          value={priority}
-          onChange={(e) => setPriority(e.target.value)}
-          aria-label="Task priority"
-        >
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
-        <input
-          type="date"
-          className="due-date-input"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          aria-label="Due date"
-        />
-        <button type="submit" className="add-todo-btn">
-          Add Task
-        </button>
+        <div className="add-todo-controls">
+          <select
+            className="priority-select"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
+            aria-label="Task priority"
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <input
+            type="date"
+            className="due-date-input"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            aria-label="Due date"
+          />
+          <button type="submit" className="add-todo-btn">
+            Add Task
+          </button>
+        </div>
       </div>
     </form>
   )
