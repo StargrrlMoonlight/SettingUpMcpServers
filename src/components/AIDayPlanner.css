@@ -1,0 +1,159 @@
+/* AI Day Planner Component */
+.ai-planner {
+    width: 100%;
+    padding: 1.5rem;
+    background: var(--color-white);
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    height: 100%;
+    margin-top: 0;
+}
+
+.ai-planner-title {
+    font-family: 'Crimson Text', serif;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-bottom: 0.25rem;
+}
+
+.ai-planner-subtitle {
+    font-size: 0.875rem;
+    color: var(--color-secondary);
+    margin-bottom: 1.5rem;
+    font-style: italic;
+}
+
+/* Focused task styles */
+.focused-task {
+    padding: 2rem;
+    background: #4a5568;
+    color: white;
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+    position: relative;
+    transition: var(--transition);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.focused-task .task-text {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-top: 1.25rem;
+    line-height: 1.4;
+}
+
+/* Upcoming tasks section */
+.upcoming-tasks-title {
+    font-family: 'Crimson Text', serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.upcoming-task {
+    padding: 1.5rem;
+    background: #4a5568;
+    color: white;
+    border-radius: var(--border-radius);
+    margin-bottom: 0.75rem;
+    position: relative;
+    transition: var(--transition);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.upcoming-task .task-text {
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+/* Priority badges */
+.priority-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.priority-high {
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.priority-medium {
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.priority-low {
+    background: rgba(0, 0, 0, 0.25);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .ai-planner {
+    background: var(--color-white);
+}
+
+[data-theme="dark"] .focused-task,
+[data-theme="dark"] .upcoming-task {
+    background: #4a5568;
+}
+
+/* Vibe mode adjustments */
+[data-theme="vibe"] .ai-planner {
+    background: var(--color-white);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.15);
+}
+
+[data-theme="vibe"] .focused-task,
+[data-theme="vibe"] .upcoming-task {
+    background: rgba(36, 23, 56, 0.9);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+    .ai-planner {
+        padding: 1rem;
+    }
+
+    .focused-task {
+        padding: 1.5rem;
+    }
+
+    .upcoming-task {
+        padding: 1rem;
+    }
+
+    .ai-planner-title {
+        font-size: 1.5rem;
+    }
+
+    .focused-task .task-text {
+        font-size: 1.125rem;
+    }
+}
+
+/* Desktop layout adjustments */
+@media (min-width: 1024px) {
+    .ai-planner {
+        padding: 1.75rem;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Make sure the planner fills the height of its container */
+    .planner-container .ai-planner {
+        min-height: 100%;
+    }
+    
+    .focused-task {
+        flex-grow: 0;
+    }
+    
+    .upcoming-tasks-title {
+        margin-top: 1rem;
+    }
+}

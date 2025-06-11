@@ -1,6 +1,7 @@
 import './App.css'
 import TodoList from './components/TodoList'
 import Header from './components/Header'
+import AIDayPlanner from './components/AIDayPlanner'
 import SaveIndicator from './components/SaveIndicator'
 import useLocalStorage from './hooks/useLocalStorage'
 import { STORAGE_KEYS, clearAllData, exportData, importData } from './utils/localStorage'
@@ -117,15 +118,25 @@ Example usage:
   return (
     <ThemeContext.Provider value={{ theme, cycleTheme }}>
       <div className="app">
-        <div className="container">
+        <div className="app-layout">
           <Header />
-          <TodoList
-            todos={migratedTodos}
-            onAddTodo={addTodo}
-            onToggleTodo={toggleTodo}
-            onDeleteTodo={deleteTodo}
-            onEditTodo={editTodo}
-          />
+          <div className="columns-layout">
+            <div className="container todo-container">
+              <TodoList
+                todos={migratedTodos}
+                onAddTodo={addTodo}
+                onToggleTodo={toggleTodo}
+                onDeleteTodo={deleteTodo}
+                onEditTodo={editTodo}
+              />
+            </div>
+            <div className="container planner-container">
+              <div className="planner-header">
+                <h2>AI Assistant</h2>
+              </div>
+              <AIDayPlanner />
+            </div>
+          </div>
         </div>
         <SaveIndicator
           show={showSaveIndicator}

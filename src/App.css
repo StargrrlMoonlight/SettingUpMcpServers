@@ -21,11 +21,27 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  background: linear-gradient(135deg, var(--color-gradient-start) 0%, var(--color-gradient-end) 100%);
+}
+
+.app-layout {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.columns-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  min-height: 600px;
 }
 
 .container {
   width: 100%;
-  max-width: 600px;
   background: var(--color-container-bg);
   border-radius: 16px;
   box-shadow: 
@@ -35,6 +51,26 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
   overflow: hidden;
   transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.todo-container {
+  max-width: 100%;
+}
+
+.planner-container {
+  max-width: 100%;
+}
+
+.planner-header {
+  padding: 1.5rem 2rem 0;
+}
+
+.planner-header h2 {
+  font-family: 'Crimson Text', serif;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
 }
 
 /* Vibe theme container effects */
@@ -60,5 +96,24 @@ body {
   .container {
     margin: 0;
     border-radius: 12px;
+  }
+}
+
+/* Desktop layout for two-column display */
+@media (min-width: 1024px) {
+  .columns-layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  
+  .todo-container {
+    flex: 2;
+    max-width: 650px;
+    margin-right: 1.5rem;
+  }
+  
+  .planner-container {
+    flex: 1;
+    max-width: 400px;
   }
 }
