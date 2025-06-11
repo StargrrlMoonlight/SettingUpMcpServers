@@ -143,16 +143,16 @@
         display: flex;
         flex-direction: column;
     }
-    
+
     /* Make sure the planner fills the height of its container */
     .planner-container .ai-planner {
         min-height: 100%;
     }
-    
+
     .focused-task {
         flex-grow: 0;
     }
-    
+
     .upcoming-tasks-title {
         margin-top: 1rem;
     }

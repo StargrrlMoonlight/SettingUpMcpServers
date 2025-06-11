@@ -44,7 +44,7 @@ body {
   width: 100%;
   background: var(--color-container-bg);
   border-radius: 16px;
-  box-shadow: 
+  box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.1),
     0 1px 3px rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(10px);
@@ -77,12 +77,12 @@ body {
 [data-theme="vibe"] .container {
   background: var(--color-container-bg);
   border: 2px solid transparent;
-  background-image: 
+  background-image:
     linear-gradient(var(--color-container-bg), var(--color-container-bg)),
     linear-gradient(135deg, var(--color-electric-blue), var(--color-neon-purple), var(--color-laser-green));
   background-origin: border-box;
   background-clip: padding-box, border-box;
-  box-shadow: 
+  box-shadow:
     var(--shadow-medium),
     0 0 60px rgba(0, 212, 255, 0.1);
   animation: var(--animation-glow);
@@ -92,7 +92,7 @@ body {
   .app {
     padding: 1rem 0.5rem;
   }
-  
+
   .container {
     margin: 0;
     border-radius: 12px;
@@ -105,13 +105,13 @@ body {
     flex-direction: row;
     align-items: flex-start;
   }
-  
+
   .todo-container {
     flex: 2;
     max-width: 650px;
     margin-right: 1.5rem;
   }
-  
+
   .planner-container {
     flex: 1;
     max-width: 400px;
