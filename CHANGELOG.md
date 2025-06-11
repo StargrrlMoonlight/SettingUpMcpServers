@@ -1,8 +1,8 @@
 # Changelog
 
-## [v1.16.1] - 2025-06-10
+## [v1.17.0] - 2025-06-11
 
 ### Quality Metrics
-- Test coverage: 92.85%
+- Test coverage: 93.52%
 - Accessibility tests: ✅ Passed
 
