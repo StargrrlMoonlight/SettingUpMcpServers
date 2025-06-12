@@ -6,7 +6,7 @@ describe('AIDayPlanner Component', () => {
     it('renders the AI Day Planner with title and subtitle', () => {
         render(<AIDayPlanner />)
 
-        expect(screen.getByText('Todays Program')).toBeInTheDocument()
+        expect(screen.getByText('Today\'s Program')).toBeInTheDocument()
         expect(screen.getByText('Delivered by your AI Assistant')).toBeInTheDocument()
     })
 
