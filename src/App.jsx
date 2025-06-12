@@ -131,9 +131,6 @@ Example usage:
               />
             </div>
             <div className="container planner-container">
-              <div className="planner-header">
-                <h2>AI Assistant</h2>
-              </div>
               <AIDayPlanner />
             </div>
           </div>
