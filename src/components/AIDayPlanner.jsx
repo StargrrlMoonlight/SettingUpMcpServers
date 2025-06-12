@@ -35,7 +35,7 @@ function AIDayPlanner() {
 
     return (
         <div className="ai-planner">
-            <h2 className="ai-planner-title">Todays Program</h2>
+            <h2 className="ai-planner-title">Today's Program</h2>
             <p className="ai-planner-subtitle">Delivered by your AI Assistant</p>
 
             {/* Focused Task */}

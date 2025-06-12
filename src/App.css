@@ -60,18 +60,6 @@ body {
   max-width: 100%;
 }
 
-.planner-header {
-  padding: 1.5rem 2rem 0;
-}
-
-.planner-header h2 {
-  font-family: 'Crimson Text', serif;
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--color-primary);
-  margin-bottom: 0.5rem;
-}
-
 /* Vibe theme container effects */
 [data-theme="vibe"] .container {
   background: var(--color-container-bg);
