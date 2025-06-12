@@ -41,9 +41,9 @@ function AIDayPlanner() {
             {/* Focused Task */}
             {focusedTask && (
                 <div className="focused-task">
-                    <div className={`priority-badge priority-${focusedTask.priority.toLowerCase()}`}>
+                    <span className={`priority-badge priority-${focusedTask.priority.toLowerCase()}`}>
                         {focusedTask.priority}
-                    </div>
+                    </span>
                     <p className="task-text">{focusedTask.text}</p>
                 </div>
             )}
@@ -55,10 +55,10 @@ function AIDayPlanner() {
 
                     {upcomingTasks.map((task) => (
                         <div key={task.id} className="upcoming-task">
-                            <div className={`priority-badge priority-${task.priority.toLowerCase()}`}>
-                                {task.priority}
-                            </div>
                             <p className="task-text">{task.text}</p>
+                            <span className={`priority-badge priority-${task.priority.toLowerCase()}`}>
+                                {task.priority}
+                            </span>
                         </div>
                     ))}
                 </>
